@@ -1,0 +1,13 @@
+services:
+  web:
+    build: .
+    privileged: true
+    devices:
+    - "/dev/bus/usb:/dev/bus/usb"
+    image: securegate-api
+    container_name: securegate-api
+    ports:
+      - "8765:8765"
+    volumes:
+      - .:/app
+    restart: unless-stopped

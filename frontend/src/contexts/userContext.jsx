@@ -1,0 +1,44 @@
+/*
+ * UserContext.jsx
+ * 
+ * This file contains the UserContext, which is used to store the user data.
+ * 
+ * Video Tutorial: https://youtu.be/tnt2y7D3V9o
+ */
+
+import React, { useState } from 'react';
+
+// Initial user state
+const initalUserState = {
+    uid: '123456',
+    first_name: 'Kieron',
+    last_name: 'Garvey',
+    email: 'garveykieron@gmail.com',
+    password: 'password',
+    phone_number: '1234567890',
+    role_id: '1234',
+    card_uid: '123456789',
+    user_picture: null,
+    last_seen_at: '2025-01-31T16:02:00.000Z',
+    created_at: '2025-01-01T00:00:00.000Z',
+};
+
+// Create the user context
+export const userContext = React.createContext();
+
+/*  
+ * UserContextProvider is a component that provides the user context to its children.
+ * It takes in a user object and provides it to its children through the user context.
+ */
+const UserContextProvider = ({ children }) => {
+    const [user, setUser] = useState(initalUserState);
+
+    return (
+        <userContext.Provider value={{ user, setUser }}>
+            {children}
+        </userContext.Provider>
+    );
+}
+
+// Export the UserContextProvider
+export default UserContextProvider;
