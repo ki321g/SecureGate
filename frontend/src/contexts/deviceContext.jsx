@@ -8,13 +8,6 @@
 
 import React, { useState } from 'react';
 
-// Initial device state
-// const initalDeviceState = {
-//     deviceid: '00112233',
-//     device_name: 'USB Camera',
-//     description: 'Garvey',
-//     created_at: '2025-02-02T11:11:11.000Z',
-// };
 // Initial devices state as an array
 const initalDevicesState = [
     {

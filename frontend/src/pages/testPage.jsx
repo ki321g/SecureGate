@@ -137,7 +137,11 @@ const TestPage = () => {
                             <CardReader setEnableDetectFace={setEnableDetectFace} />
                             
                             <Typography variant="body1" color="text.secondary" component="p">
-                                Welcome, {user.first_name} {user.last_name}!
+                                Welcome, {user.first_name} {user.last_name}! <br></br>
+                                Email: {user.email} <br></br>
+                                Card UID: {user.card_id} <br></br>
+                                Role ID: {user.role_id} <br></br>
+                                Created At: {user.created_at} <br></br>
                             </Typography>
 
                         </div> 

@@ -11,9 +11,9 @@ import React, { useState, useContext } from 'react';
 // Initial user state
 const initalUserState = {
     uid: '123456',
-    first_name: 'Kieron',
-    last_name: 'Garvey',
-    email: 'garveykieron@gmail.com',
+    first_name: 'firstName',
+    last_name: 'lastName',
+    email: 'firstName@lastName.com',
     password: 'password',
     phone_number: '1234567890',
     role_id: '1234',

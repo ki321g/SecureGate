@@ -83,14 +83,14 @@ const CardReader = ({ setEnableDetectFace }) => {
 
 return (
     <>
-      <br></br>
+      {/* <br></br>
       <button onClick={isReading ? stopReading : startReading}>
         {isReading ? 'Stop Reading' : 'Start Reading'}
       </button>
     
       <div>
         <button onClick={() => resetCardUID('None')}>Set Card UID</button>
-      </div>
+      </div> */}
 
       {cardData ? (
           cardData.status === 'error' ? (

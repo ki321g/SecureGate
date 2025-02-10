@@ -14,11 +14,11 @@ import {
 //Context 
 import { useCamera } from '../contexts/cameraContext'; 
 
-const videoWidth = 1280;
-const videoHeight = 720;
+const videoWidth = 1024;
+const videoHeight = 576;
 const refVideoConstraints = {
-    width: 1280,
-    height: 720,
+    width: videoWidth,
+    height: videoHeight,
     facingMode: "user"
   }
 

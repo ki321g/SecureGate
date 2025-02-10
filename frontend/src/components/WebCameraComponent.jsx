@@ -28,18 +28,18 @@ import { useCardUID } from '../contexts/cardUidContext';
 import { userContext } from '../contexts/userContext';
 
 // Constants
-const videoWidth = 1280;
-const videoHeight = 720;
-const faceLandmarkerWait = 2000;
-
 const faceDectorModel = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
 const faceLandmarkerModel = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
 const faceWASM = '/node_modules/@mediapipe/tasks-vision/wasm';
 // "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2/wasm"
 
+const videoWidth = 1024;
+const videoHeight = 576;
+const faceLandmarkerWait = 200;
+
 const refVideoConstraints = {
-    width: 1280,
-    height: 720,
+    width: videoWidth,
+    height: videoHeight,
     facingMode: "user"
   }
 
