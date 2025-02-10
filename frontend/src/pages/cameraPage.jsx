@@ -313,6 +313,7 @@ const CameraPage = () => {
                         <Webcam
                             ref={webcamRef}
                             mirrored={false}
+                            audio={false}
                             screenshotFormat="image/jpeg"
                             videoConstraints={ refVideoConstraints }
                             style={ styles.webcam }

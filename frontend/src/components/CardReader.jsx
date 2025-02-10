@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 // Context
-import { cardUidContext } from '../../contexts/cardUidContext'
-import { userContext } from '../../contexts/userContext'
+import { cardUidContext } from '../contexts/cardUidContext'
+import { userContext } from '../contexts/userContext'
 // API
-import { usersApi } from '../../api/supabase/supabaseApi'
+import { usersApi } from '../api/supabase/supabaseApi'
 
 
-const CardReader = ({ setDetectFaceEnabled }) => { 
+const CardReader = ({ setEnableDetectFace }) => { 
     const { cardUID, setCardUID } = useContext(cardUidContext)
     const { user, setUser } = useContext(userContext)
     const [cardData, setCardData] = useState(null);
@@ -57,7 +57,7 @@ const CardReader = ({ setDetectFaceEnabled }) => {
                     } catch (error) {
                         console.error('Error fetching data:', error.message);
                     } finally {
-                        setDetectFaceEnabled(true); // Enable face detection
+                        setEnableDetectFace(true); // Enable face detection
                     }
                 // }
             }

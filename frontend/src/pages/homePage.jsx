@@ -1,6 +1,8 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom'
+
+//Context 
+import { useCamera } from '../contexts/cameraContext'; // Adjust path
 
 // Import: Video Processing Libraries
 import Webcam from 'react-webcam'
@@ -77,9 +79,10 @@ const styles = {
 }
 
 const HomePage = () => {
-  const navigate = useNavigate()
-  const webcamRef = useRef(null);
-  const canvasRef = useRef(null);
+  const { webcamRef, canvasRef } = useCamera();
+  const navigate = useNavigate();
+  // const webcamRef = useRef(null);
+  // const canvasRef = useRef(null);
   const [personDetected, setPersonDetected] = useState(false);
   const [objectDetector, setObjectDetector] = useState(null); 
   const [lastVideoTime, setLastVideoTime] = useState(-1);
@@ -189,14 +192,17 @@ const HomePage = () => {
             height={720} width={1280} screenshotFormat="image/jpeg" videoConstraints={ refVideoConstraints } style={styles.webcam} /> */}
           <Webcam
             ref={webcamRef}
+            mirrored={false}
             audio={false}
-            height={720}
             screenshotFormat="image/jpeg"
             width={1280}
+            height={720}
             videoConstraints={ refVideoConstraints}
             style={styles.webcam}
           />
-          <canvas ref={canvasRef} style={styles.canvas}
+          <canvas 
+            ref={canvasRef} 
+            style={styles.canvas}
           />
         </Box>
       </Container>

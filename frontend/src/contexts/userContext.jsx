@@ -6,7 +6,7 @@
  * Video Tutorial: https://youtu.be/tnt2y7D3V9o
  */
 
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 
 // Initial user state
 const initalUserState = {
@@ -25,6 +25,12 @@ const initalUserState = {
 
 // Create the user context
 export const userContext = React.createContext();
+
+// Custom hook for easy access to the context.
+export const useUser = () => {
+    return useContext(userContext);
+};
+
 
 /*  
  * UserContextProvider is a component that provides the user context to its children.
