@@ -155,7 +155,13 @@ export const devicesApi = {
 /*
  * Supabase Role to Device Table API Functions
  */
-export const roleToDeviceApi = {
+export const roleToDeviceApi = {  
+  getAll: async () => {
+    const { data, error } = await supabase
+      .from('role_to_device')
+      .select('*')
+    return { data, error }
+  },
   assign: async (roleId, deviceId) => {
     const { data, error } = await supabase
       .from('role_to_device')

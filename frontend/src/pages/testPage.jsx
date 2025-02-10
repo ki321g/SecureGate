@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
     Box,
     Typography,
@@ -14,10 +14,13 @@ import WebCameraComponent from '../components/WebCameraComponent';
 import WebCameraObjectDectionComponent from '../components/WebCameraObjectDectionComponent';
 import LogoComponent from '../components/LogoComponent';
 
+// API
+import { rolesApi, devicesApi, roleToDeviceApi } from '../api/supabase/supabaseApi'
 
 //Context 
 import { useCardUID } from '../contexts/cardUidContext';
 import { useUser } from '../contexts/userContext';
+import { useData } from '../contexts/dataContext';
 
 const videoWidth = 1024;
 const videoHeight = 576;
@@ -92,11 +95,59 @@ const styles = {
   }
 
 const TestPage = () => {
+    const { devices, setDevices } = useData();
+    const { roles, setRoles } = useData();
+    const { roleToDevices, setRolesToDevices } = useData();
     const { cardUID, setCardUID } = useCardUID();
     const { user, setUser } = useUser();
     const [ cardReader, setCardReader ] = useState(false);
     const [showFaceDector, setShowFaceDector] = useState(false);
     const [enableDetectFace, setEnableDetectFace] = useState(false);
+    
+    useEffect(() => {
+
+        const fetchRolesData = async () => {
+            try {
+                    const { data, error } = await rolesApi.getAll();
+                
+                    if (error) throw error;
+                    setRoles(data);
+                    console.log('ROLES:', data);
+            } catch (error) {
+                console.error('Error fetching ROLES data:', error.message);
+            }
+        };
+
+        const fetchDevicesData = async () => {
+            try {
+                const { data, error } = await devicesApi.getAll();
+                
+                if (error) throw error;
+                setDevices(data);
+                console.log('DEVICES:', data);
+
+            } catch (error) {
+                console.error('Error fetching DEVICES data:', error.message);
+            }
+        };
+
+        const fetchRolesToDevicesData = async () => {
+            try {
+                const { data, error } = await roleToDeviceApi.getAll();
+                
+                if (error) throw error;
+                setRolesToDevices(data); 
+                console.log('RoleToDevices:', data);
+
+            } catch (error) {
+                console.error('Error fetching RolesToDevices data:', error.message);
+            }
+        };
+            //devicesApi, roleToDeviceApi roleToDevices
+        fetchRolesData();
+        fetchDevicesData();
+        fetchRolesToDevicesData();
+    }, []);
 
     const handleToggle = () => {
         setShowFaceDector(previousState => !previousState); // Toggle faceDetector state

@@ -18,6 +18,15 @@ const DataContextProvider = ({ children }) => {
     const [roles, setRoles] = useState(initalRolesState);
     const [roleToDevices, setRolesToDevices] = useState(initalRolesToDevicesState);
 
+    const contextValue = {
+        devices,
+        setDevices,
+        roles,
+        setRoles,
+        roleToDevices,
+        setRolesToDevices
+    };
+
     return (
         <DataContext.Provider value={contextValue}>
             {children}
