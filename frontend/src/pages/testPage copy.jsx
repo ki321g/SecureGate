@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from 'react';
-
 import { 
     Box,
     Typography,
@@ -14,12 +13,6 @@ import ScreenSaverComponent from '../components/ScreenSaverComponent';
 import WebCameraComponent from '../components/WebCameraComponent';
 import WebCameraObjectDectionComponent from '../components/WebCameraObjectDectionComponent';
 import LogoComponent from '../components/LogoComponent';
-import ScanCardComponent from '../components/ScanCardComponent';
-import UserRecognitionComponent from '../components/UserRecognitionComponent';
-import DeviceSelectionComponent from '../components/DeviceSelectionComponent';
-
-//Testing
-import ToggleButtonComponent from '../components/ToggleButtonComponent';
 
 // API
 import { rolesApi, devicesApi, roleToDeviceApi } from '../api/supabase/supabaseApi'
@@ -89,6 +82,16 @@ const styles = {
         fontSize: '60px',
         fontWeight: 'bold',
     },
+    toggleButtonStack: {  // Add this style object
+        position: 'absolute',
+        padding: 2,
+        margin: 2,
+        backgroundColor: 'rgba(255, 255, 255, 0.7)', 
+        borderRadius: '6px',
+        top: 0,
+        left: 0,
+        zIndex: 10, // Higher z-index than the webcam
+    },
   }
 
 const TestPage = () => {
@@ -100,7 +103,6 @@ const TestPage = () => {
     const [ cardReader, setCardReader ] = useState(false);
     const [showFaceDector, setShowFaceDector] = useState(false);
     const [enableDetectFace, setEnableDetectFace] = useState(false);
-    const [activeComponent, setActiveComponent] = useState('scanCard'); 
     
     useEffect(() => {
 
@@ -147,6 +149,10 @@ const TestPage = () => {
         fetchRolesToDevicesData();
     }, []);
 
+    const handleToggle = () => {
+        setShowFaceDector(previousState => !previousState); // Toggle faceDetector state
+    };
+
   return (
     <>
         {/* ScreenSaver - Logo first Screen*/}
@@ -172,26 +178,14 @@ const TestPage = () => {
                         <WebCameraComponent enableDetectFace={ enableDetectFace } isVisable={ true } />
                         {/* Right Column: Content */}
                         <Box id='DetectorContentBox' sx={ styles.detectorContentBox }>
-                            {activeComponent === 'scanCard' && 
-                                <ScanCardComponent setEnableDetectFace={ setEnableDetectFace } setActiveComponent={ setActiveComponent }/>
-                            }
-                            {activeComponent === 'userRecognition' && 
-                                <UserRecognitionComponent setActiveComponent={ setActiveComponent }/>
-                            }
-                            {activeComponent === 'deviceSelection' && 
-                                <DeviceSelectionComponent setActiveComponent={ setActiveComponent }/>
-                            }
-
-
-
                         {/* Wrap the text content in a div */}
-                        {/* <div> 
+                        <div> 
                             <Typography id='DetectorContentHeading'  variant="h1" sx={ styles.detectorContentHeading } >
                                     STATUS
-                            </Typography> */}
+                            </Typography>
                             
                             {/* Pass setEnableDetectFace as a prop */}
-                            {/* <CardReader setEnableDetectFace={setEnableDetectFace} />
+                            <CardReader setEnableDetectFace={setEnableDetectFace} />
                             
                             <Typography variant="body1" color="text.secondary" component="p">
                                 Welcome, {user.first_name} {user.last_name}! <br></br>
@@ -201,7 +195,7 @@ const TestPage = () => {
                                 Created At: {user.created_at} <br></br>
                             </Typography>
 
-                        </div>  */}
+                        </div> 
                         {/* End of text content wrapper */}
                         </Box>
                     </Stack>
@@ -209,8 +203,17 @@ const TestPage = () => {
             </Box>
         )}	
 
-         {/* ToggleButtonComponent: Used during Development Remove of comment out */}
-        <ToggleButtonComponent showFaceDector={ showFaceDector } setShowFaceDector={ setShowFaceDector }/>
+         {/* Conditional Rendering based on toggleButton */}
+         <Stack id='toggleButtonStack' direction="column" spacing={2} sx={styles.toggleButtonStack}>
+            <Button id='bottomButton' variant="contained" onClick={handleToggle}>
+                Toggle
+            </Button>
+            {!showFaceDector ? (
+                <Typography>Logo (showFaceDector is OFF)</Typography>
+            ) : (
+                <Typography>FaceDector (showFaceDector is ON)</Typography>
+            )}
+        </Stack>
     </>
   );
 }
