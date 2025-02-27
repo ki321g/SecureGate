@@ -137,3 +137,10 @@ api/__pycache__/
 #frontend
 frontend/node_modules/
 frontend/.env
+
+#TinyTuya
+TinyTuya/.venv/
+TinyTuya/device.json
+TinyTuya/snapshot.json
+TinyTuya/tinytuya.json
+TinyTuya/tuya-raw.json
