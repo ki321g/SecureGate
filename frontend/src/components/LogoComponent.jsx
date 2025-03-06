@@ -40,7 +40,7 @@ return (
                 SecureGate
                 </Typography>
                 <Typography variant="h4" component="div" sx={ styles.subHeaderText }>
-                Iot Security Access Management
+                IoT Security Access Management
                 </Typography>
             </Stack>
         </Stack>

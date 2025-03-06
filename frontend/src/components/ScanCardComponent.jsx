@@ -47,7 +47,7 @@ const styles = {
         }
     },
 };
-const ScanCardComponent = ({ setEnableDetectFace, setActiveComponent }) => {
+const ScanCardComponent = ({ setActiveComponent }) => {
     const { cardUID, setCardUID } = useContext(cardUidContext)
     const { user, setUser } = useContext(userContext)
     const [cardData, setCardData] = useState(null);
@@ -56,7 +56,7 @@ const ScanCardComponent = ({ setEnableDetectFace, setActiveComponent }) => {
 
     const readCard = async () => {
         try {
-            const response = await axios.get('http://localhost:3002/card_uid', {
+            const response = await axios.get('http://localhost:3002/card/uid', {
                 headers: {
                     'Cache-Control': 'no-cache'
                 }
@@ -94,10 +94,12 @@ const ScanCardComponent = ({ setEnableDetectFace, setActiveComponent }) => {
                     } catch (error) {
                         console.error('Error fetching data:', error.message);
                     } finally {
-                        const interval = setInterval(() => {                           
-                            setEnableDetectFace(true); // Enable face detection
-                            setActiveComponent('userRecognition');
+                        const timeout = setTimeout(() => {
+                            // setEnableDetectFace(true); // Enable face detection
+                            // setActiveComponent('userRecognition');
+                            setActiveComponent('enterPin');
                         }, 1500); 
+                        return () => clearTimeout(timeout);
                     }
                 // }
             }

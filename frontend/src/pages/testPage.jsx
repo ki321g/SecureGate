@@ -17,6 +17,7 @@ import LogoComponent from '../components/LogoComponent';
 import ScanCardComponent from '../components/ScanCardComponent';
 import UserRecognitionComponent from '../components/UserRecognitionComponent';
 import DeviceSelectionComponent from '../components/DeviceSelectionComponent';
+import EnterPinComponent from '../components/EnterPinComponent';
 
 //Testing
 import ToggleButtonComponent from '../components/ToggleButtonComponent';
@@ -98,9 +99,9 @@ const TestPage = () => {
     const { cardUID, setCardUID } = useCardUID();
     const { user, setUser } = useUser();
     const [ cardReader, setCardReader ] = useState(false);
-    const [showFaceDector, setShowFaceDector] = useState(false);
-    const [enableDetectFace, setEnableDetectFace] = useState(false);
-    const [activeComponent, setActiveComponent] = useState('scanCard'); 
+    const [ showFaceDector, setShowFaceDector ] = useState(false);
+    const [ enableDetectFace, setEnableDetectFace ] = useState(false);
+    const [ activeComponent, setActiveComponent ] = useState('scanCard'); 
     
     useEffect(() => {
 
@@ -173,7 +174,10 @@ const TestPage = () => {
                         {/* Right Column: Content */}
                         <Box id='DetectorContentBox' sx={ styles.detectorContentBox }>
                             {activeComponent === 'scanCard' && 
-                                <ScanCardComponent setEnableDetectFace={ setEnableDetectFace } setActiveComponent={ setActiveComponent }/>
+                                <ScanCardComponent setActiveComponent={ setActiveComponent }/>
+                            }
+                            {activeComponent === 'enterPin' && 
+                                <EnterPinComponent setEnableDetectFace={ setEnableDetectFace } setActiveComponent={ setActiveComponent }/>
                             }
                             {activeComponent === 'userRecognition' && 
                                 <UserRecognitionComponent setActiveComponent={ setActiveComponent }/>

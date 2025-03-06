@@ -16,7 +16,7 @@ const CardReader = ({ setEnableDetectFace }) => {
 
     const readCard = async () => {
         try {
-            const response = await axios.get('http://localhost:3002/card_uid', {
+            const response = await axios.get('http://localhost:3002/card/uid', {
                 headers: {
                     'Cache-Control': 'no-cache'
                 }

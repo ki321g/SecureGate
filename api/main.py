@@ -1,8 +1,13 @@
+#!/usr/bin/env python3
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pathlib import Path
 from card_scanner import start_scanner
+from control_door import toggle_door as control_toggle_door
+from control_door import get_status as get_door_status
+from control_door import open_door as control_open_door
+from control_door import close_door as control_close_door
 from shared_state import CARD_UID, CARD_PRESSENT
 import subprocess
 import threading
@@ -18,6 +23,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 ##########################################
 #          API Routes:  General          #
@@ -36,7 +42,7 @@ def read_item(item_id: int, q: str = None):
 #############################################
 #          API Routes: Card Reader          #
 #############################################
-@app.get('/card_uid')
+@app.get('/card/uid')
 def read_card():
     import shared_state # Import shared state module to access the global variable
     try:
@@ -80,6 +86,64 @@ def reset_card_uid(new_uid: str):
             'message': f'Failed to set Card UID: {str(e)}'
         }
 
+#############################################
+#          API Routes: Door Control         #
+#############################################
+@app.post('/door/open')
+def open_door():
+    try:
+        control_open_door()
+        return {
+            'status': 'success',
+            'message': 'Door opened successfully'
+        }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': f'Failed to open door: {str(e)}'
+        }
+
+@app.post('/door/close')
+def close_door():
+    try:
+        control_close_door()
+        return {
+            'status': 'success',
+            'message': 'Door closed successfully'
+        }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': f'Failed to close door: {str(e)}'
+        }
+
+@app.post('/door/toggle')
+def toggle_door():
+    try:
+        control_toggle_door() 
+        return {
+            'status': 'success',
+            'message': 'Door toggled successfully'
+        }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': f'Failed to toggle door: {str(e)}'
+        }
+
+@app.get('/door/status')
+def door_status():
+    try:
+        status = get_door_status()
+        return {
+            'status': 'success',
+            'message': status
+        }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': f'Failed to get door status: {str(e)}'
+        }
 
 #############################################
 #          API Routes: Screen Saver         #
@@ -109,7 +173,7 @@ def start_screensaver():
 
 ##############################################
 #                  __main__                  #
-#############################################
+##############################################
 if __name__ == '__main__':
     # Start card scanner in a separate thread
     scanner_thread = threading.Thread(target=start_scanner)
