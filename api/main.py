@@ -23,6 +23,7 @@ import uvicorn
 import os
 import re # Using for String replacement
 from dotenv import load_dotenv
+from typing import Union
 
 # Load environment variables
 load_dotenv()
@@ -46,7 +47,7 @@ class DoorActionRequest(BaseModel):
 class CardResponse(BaseModel):
     status: str
     message: str
-    card_uid: str = None
+    card_uid: Union[str, int] = None
 
 class ApiResponse(BaseModel):
     status: str

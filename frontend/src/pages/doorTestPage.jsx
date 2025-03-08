@@ -12,10 +12,9 @@ import LockOpenIcon from '@mui/icons-material/LockOpen';
 import LockIcon from '@mui/icons-material/Lock';
 import CachedIcon from '@mui/icons-material/Cached';
 
-// API key - in a real app, this should be stored securely
-// Consider using environment variables with .env file
-const API_KEY = import.meta.env.VITE_BACKEND_API_KEY || 'your-secure-api-key';
-const API_BASE_URL = import.meta.env.VITE_BACKEND_API_BASE_URL || 'http://localhost:3002';
+// API key and base URL from environment variables
+const API_KEY = import.meta.env.VITE_BACKEND_API_KEY;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_API_BASE_URL;
 
 const DoorControl = () => {
   const [doorStatus, setDoorStatus] = useState('unknown');
