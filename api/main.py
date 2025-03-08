@@ -260,7 +260,7 @@ def check_door_status(api_key: str = Depends(get_api_key)):
         }
 
 # For backward compatibility (can be removed later)
-@app.get('/door/open', tags=["Door Control"], response_model=ApiResponse, deprecated=True)
+@app.get('/door/open', tags=["Door Control"], include_in_schema=False, response_model=ApiResponse, deprecated=True)
 def open_door(api_key: str = Depends(get_api_key)):
     """
     Open the door (deprecated, use POST /door with action=open instead).
@@ -278,7 +278,7 @@ def open_door(api_key: str = Depends(get_api_key)):
             'message': f'Failed to open door: {str(e)}'
         }
 
-@app.get('/door/close', tags=["Door Control"], response_model=ApiResponse, deprecated=True)
+@app.get('/door/close', tags=["Door Control"], include_in_schema=False, response_model=ApiResponse, deprecated=True)
 def close_door(api_key: str = Depends(get_api_key)):
     """
     Close the door (deprecated, use POST /door with action=close instead).
@@ -296,7 +296,7 @@ def close_door(api_key: str = Depends(get_api_key)):
             'message': f'Failed to close door: {str(e)}'
         }
 
-@app.get('/door/toggle', tags=["Door Control"], response_model=ApiResponse, deprecated=True)
+@app.get('/door/toggle', tags=["Door Control"], include_in_schema=False, response_model=ApiResponse, deprecated=True)
 def toggle_door(api_key: str = Depends(get_api_key)):
     """
     Toggle the door state (deprecated, use POST /door with action=toggle instead).
