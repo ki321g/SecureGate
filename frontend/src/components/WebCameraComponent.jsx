@@ -11,6 +11,8 @@ https://codepen.io/mediapipe-preview/pen/OJByWQr
  */
 import React, { useRef, useEffect, useState } from 'react';
 import { Box } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, List, ListItem, ListItemText, Divider } from '@mui/material';
+import axios from 'axios';
 
 // Import: Video Processing Libraries
 import Webcam from 'react-webcam'
@@ -26,6 +28,14 @@ import {
 import { useCamera } from '../contexts/cameraContext'; 
 import { useCardUID } from '../contexts/cardUidContext';
 import { useUser } from '../contexts/userContext';
+
+// API key and base URL from environment variables
+const deepFaceFacialRecognitionModel = import.meta.env.VITE_DEEPFACE_FACE_RECOGNITION_MODEL || "Facenet";
+const deepFaceDetector = import.meta.env.VITE_DEEPFACE_DETECTOR_BACKEND || "mediapipe";
+const deepFaceDistanceMetric = import.meta.env.VITE_DEEPFACE_DISTANCE_METRIC || "cosine";
+const deepFaceServiceEndpoint = import.meta.env.VITE_DEEPFACE_SERVICE_URL;
+const deepFaceAntiSpoofing = import.meta.env.VITE_DEEPFACE_ANTI_SPOOFING === "1"
+
 
 // Constants
 const faceDectorModel = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
@@ -101,7 +111,12 @@ const WebCameraComponent = ({ enableDetectFace, isVisable }) => {
     const [isReady, setIsReady] = useState(false);
     const { user, setUser } = useUser();
     const [imgSrc, setImgSrc] = useState(null);
-    const [hasCapturedImage, setHasCapturedImage] = useState(false);
+    const [hasCapturedImage, setHasCapturedImage] = useState(false);    
+    const [isVerified, setIsVerified] = useState(null);  
+    const [isAnalyzed, setIsAnalyzed] = useState(null);
+    const [openDialog, setOpenDialog] = useState(false);
+    const [verificationData, setVerificationData] = useState(null);
+
 
 
 
@@ -163,6 +178,8 @@ const WebCameraComponent = ({ enableDetectFace, isVisable }) => {
     /* --- 3. Start Face Detection Loop (Conditional) --- */
     useEffect(() => {
         let animationFrame;
+        let localHasCaptured = hasCapturedImage; // Create a local variable
+
 
         const detectFace = async () => {
             if (enableDetectFace && webcamRef.current?.video) {
@@ -171,12 +188,13 @@ const WebCameraComponent = ({ enableDetectFace, isVisable }) => {
                 if (results.detections.length > 0) {
                     setFaceDetected(true);
                     // Only capture and download if we haven't already done so
-                    if (!hasCapturedImage) {
+                    if (!localHasCaptured) {
                         const imageSrc = webcamRef.current.getScreenshot();
                         setImgSrc(imageSrc);
-                        
-                        // downloadBase64File(imageSrc, 'txt');
-                        setHasCapturedImage(true); // Mark that we've captured an image
+                        await verify(imageSrc);
+                        // downloadBase64File(imageSrc, 'txt'); 
+                        setHasCapturedImage(true);
+                        localHasCaptured = true; 
                     };
                     setDetectingFace(false); // Stop showing "Face Not Detected"
                 } else {
@@ -198,7 +216,7 @@ const WebCameraComponent = ({ enableDetectFace, isVisable }) => {
                 cancelAnimationFrame(animationFrame);
             }
         };
-    }, [faceDetector, enableDetectFace]); // Triggered when faceDetector or enableDetectFace changes
+    }, [faceDetector, enableDetectFace, hasCapturedImage, imgSrc]); // Triggered when faceDetector enableDetectFace or hasCapturedImage changes
 
     /* --- 4. Start Landmark Drawing Loop (Conditional) --- */
     useEffect(() => {
@@ -238,20 +256,110 @@ const WebCameraComponent = ({ enableDetectFace, isVisable }) => {
 
     /* --- Download Base64 File Function --- */
     const downloadBase64File = (base64Data, fileType) => {
-    const link = document.createElement('a');
-    const timestamp = Date.now();
+        const link = document.createElement('a');
+        const timestamp = Date.now();
+        
+        if (fileType === 'txt') {
+        const blob = new Blob([base64Data], { type: 'text/plain' });
+        link.href = URL.createObjectURL(blob);
+        link.download = `webcam-base64-${timestamp}.txt`;
+        } else {
+        link.href = base64Data;
+        link.download = `webcam-capture-${timestamp}.jpeg`;
+        }
+        
+        link.click();
+    };
+
+    // /* --- Verify User Function --- */
+    const verify = async (imageSrc) => {
+        try {
+            const requestBody = JSON.stringify(
+              {
+                model_name: deepFaceFacialRecognitionModel,
+                detector_backend: deepFaceDetector,
+                distance_metric: deepFaceDistanceMetric,
+                align: true,
+                img1: imageSrc,
+                img2: user.user_picture,
+                enforce_detection: false,
+                anti_spoofing: deepFaceAntiSpoofing,
+              }
+            );
     
-    if (fileType === 'txt') {
-      const blob = new Blob([base64Data], { type: 'text/plain' });
-      link.href = URL.createObjectURL(blob);
-      link.download = `webcam-base64-${timestamp}.txt`;
-    } else {
-      link.href = base64Data;
-      link.download = `webcam-capture-${timestamp}.jpeg`;
-    }
+            console.log(`calling service endpoint ${deepFaceServiceEndpoint}/verify`)
+            
+            
+            const response = await fetch(`${deepFaceServiceEndpoint}/verify`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: requestBody,
+            });
+
+            // const response = await axios.post(`${deepFaceServiceEndpoint}/verify`, {
+            //   headers: {
+            //     'Content-Type': 'application/json',
+            //   },
+            //   body: requestBody,
+            // });
     
-    link.click();
-  };
+            const data = await response.json();
+
+            console.log('response: ', response);
+            console.log('data: ', data);
+
+                
+            // Save verification results to file
+            // downloadJsonFile(data, `verification-results-${Date.now()}.json`);
+    
+            
+            // Store the verification data for display
+            setVerificationData(data);
+            // Open the dialog to show results
+            setOpenDialog(true);
+    
+            if (response.status !== 200) {
+              console.log(data.error);
+              setIsVerified(false);
+              return
+            }
+      
+            if (data.verified === true) {
+              setIsVerified(true);
+              setIsAnalyzed(false);
+              //break;
+            }
+          // if isVerified key is not true after for loop, then it is false
+          if (isVerified === null) {
+            setIsVerified(false);
+          }
+          
+        }
+        catch (error) {
+          console.error('Exception while verifying image:', error);
+          // Show error in dialog
+          setVerificationData({ error: error.message });
+          setOpenDialog(true);
+        }
+    
+      };
+
+      const downloadJsonFile = (data, filename) => {
+        const jsonString = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename || `verification-results-${Date.now()}.json`;
+        link.click();
+      };
+
+
+    // Add a function to handle dialog close
+    const handleCloseDialog = () => {
+        setOpenDialog(false);
+    };
 
     /* --- Draw Face Landmark Results Function --- */
     const drawResults = (ctx, results) => {
@@ -300,6 +408,76 @@ const WebCameraComponent = ({ enableDetectFace, isVisable }) => {
                 style={ isVisable ? styles.canvas : styles.canvasDisplayNone }
             />
         </Box>
+
+         
+            {/* Verification Results Dialog */}
+            <Dialog
+                open={openDialog}
+                onClose={handleCloseDialog}
+                aria-labelledby="verification-dialog-title"
+                maxWidth="md"
+            >
+                <DialogTitle id="verification-dialog-title">
+                    Face Verification Results
+                </DialogTitle>
+                <DialogContent>
+                    {verificationData && (
+                        <List>
+                            <ListItem>
+                                <ListItemText 
+                                    primary="Verification Status" 
+                                    secondary={verificationData.verified ? "✅ Verified" : "❌ Not Verified"} 
+                                    secondaryTypographyProps={{ 
+                                        color: verificationData.verified ? "success.main" : "error.main",
+                                        fontWeight: "bold" 
+                                    }}
+                                />
+                            </ListItem>
+                            <Divider />
+                            {verificationData.model && (
+                                <ListItem>
+                                    <ListItemText primary="Model Used" secondary={verificationData.model} />
+                                </ListItem>
+                            )}
+                            {verificationData.detector_backend && (
+                                <ListItem>
+                                    <ListItemText primary="Detector" secondary={verificationData.detector_backend} />
+                                </ListItem>
+                            )}
+                            {verificationData.distance && (
+                                <ListItem>
+                                    <ListItemText 
+                                        primary="Distance Score" 
+                                        secondary={verificationData.distance.toFixed(4)} 
+                                    />
+                                </ListItem>
+                            )}
+                            {verificationData.threshold && (
+                                <ListItem>
+                                    <ListItemText primary="Threshold" secondary={verificationData.threshold.toFixed(4)} />
+                                </ListItem>
+                            )}
+                            {verificationData.error && (
+                                <ListItem>
+                                    <ListItemText 
+                                        primary="Error" 
+                                        secondary={verificationData.error} 
+                                        secondaryTypographyProps={{ color: "error.main" }}
+                                    />
+                                </ListItem>
+                            )}
+                            {/* Add more fields as needed based on your API response */}
+                        </List>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseDialog} color="primary">
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+
     </>
   );
 }
