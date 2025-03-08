@@ -17,6 +17,7 @@ import HomePage from "./pages/homePage";
 import DashboardPage from "./pages/dashboardPage"
 import AboutPage from "./pages/aboutPage"
 import CameraPage from "./pages/cameraPage"
+import DoorTestPage from "./pages/doorTestPage"
 import TestPage from "./pages/testPage"
 
 // Set Theme
@@ -48,6 +49,7 @@ const App = () => {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/camera" element={<CameraPage />} />
+                <Route path="/door" element={<DoorTestPage />} />
                 <Route path="/test" element={<TestPage />} />
               </Routes>
             </AppContextProvider>

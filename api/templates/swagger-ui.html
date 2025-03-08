@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4/swagger-ui.css">
+    <link type="text/css" rel="stylesheet" href="/static/css/swagger-ui-custom.css">
+    <title>{{title}} - API Documentation</title>
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4/swagger-ui-bundle.js"></script>
+    <script>
+        const CaseInsensitiveFilterPlugin = function (system) {
+            return {
+                fn: {
+                    opsFilter: (taggedOps, phrase) => {
+                        return taggedOps.filter((tagObj, tag) => tag.toLowerCase().indexOf(phrase.toLowerCase()) !== -1);
+                    }
+                }
+            }
+        };
+        const ui = SwaggerUIBundle({
+            url: '{{openapi_url}}',
+            dom_id: '#swagger-ui',
+            layout: "BaseLayout",
+            deepLinking: true,
+            showExtensions: true,
+            showCommonExtensions: true,
+            persistAuthorization: true,
+            displayRequestDuration: true,
+            filter: true,
+            plugins: [
+                CaseInsensitiveFilterPlugin
+            ],
+            syntaxHighlight: {
+                theme: "agate"
+            }
+        })
+    </script>
+</body>
+</html>

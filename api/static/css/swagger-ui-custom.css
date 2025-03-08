@@ -1,0 +1,157 @@
+@import url('/static/fonts/fonts.css');
+ 
+body {
+    background-color: #1e1e1e;
+    color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+} 
+
+.swagger-ui {
+    background-color: #1e1e1e;
+    color: #f0f0f0;
+}
+
+.swagger-ui .info { 
+    margin: 30px 0 0;
+}
+
+.swagger-ui .info .title,
+.swagger-ui .info li, 
+.swagger-ui .info p, 
+.swagger-ui .info table {
+    color: #f0f0f0;
+}
+
+.swagger-ui .info .title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 900;
+    font-size: 6em;
+    text-align: center !important;
+}
+
+.swagger-ui .info .url {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 900;
+    font-size: 1.2em;
+}
+.swagger-ui .info .main {    
+    text-align: center !important;
+}
+
+.swagger-ui .info .title small pre {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 900;
+    font-size: 2em !important;
+}
+
+.swagger-ui .info li, 
+.swagger-ui .info p, 
+.swagger-ui .info table {
+    font-family: 'Montserrat', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 1.5em !important;
+}
+
+.swagger-ui .description .renderedMarkdown p {
+    margin: 10px 0;
+    text-align: center !important;
+}
+
+.swagger-ui.swagger-ui .scheme-container {
+    background-color: #1e1e1e;
+    margin: 0 !important;
+    padding: 10px !important;
+}
+/* .opblock-tag */
+.swagger-ui .wrapper {
+    background-color: #1e1e1e;
+}
+
+.swagger-ui .wrapper .block .opblock-tag-section {
+    border: 2px solid #d8dde7;
+    border-radius: 4px;
+    background-color: #f0f0f0;
+    padding: 0 10px;
+    margin-bottom: 10px;
+}
+
+.swagger-ui .opblock-tag .nostyle span {
+    font-family: 'Montserrat', sans-serif !important;
+    font-weight: 900 !important;
+    font-size: 1em !important;
+}
+
+.swagger-ui .wrapper .models h4 {
+    font-size: 24px;
+}
+
+.swagger-ui .wrapper .models .models-control {
+    font-family: 'Montserrat', sans-serif !important;
+    font-weight: 900 !important;
+    font-size: 1em !important;
+    padding: 10px 20px 10px 10px;
+}
+.swagger-ui .wrapper .models .models-control span {
+    font-family: 'Montserrat', sans-serif !important;
+    font-weight: 900 !important;
+    font-size: 1em !important;
+    color: #3b4151 !important;
+}
+
+.swagger-ui .filter .operation-filter-input {
+    margin: 0 0 10px;
+}
+
+.swagger-ui section.models {
+    margin: 50px 0 50px !important;
+}
+
+.swagger-ui section.models .model-container:first-of-type {
+    margin: 20px 10px 15px;
+}
+
+.swagger-ui section.models .model-container {
+    margin: 0 10px 15px;
+}
+
+.swagger-ui section.models .model-container:last-of-type {
+    margin: 0 10px 20px;
+}
+
+.swagger-ui .wrapper .models {
+    border: 2px solid #d8dde7;
+    border-radius: 4px;
+    background-color: #f0f0f0;
+    padding: 0 10px;
+    margin-bottom: 10px;
+}
+
+.swagger-ui .auth-container .wrapper{
+    background-color: #fff;
+}
+
+/* .swagger-ui .opblock-tag .nostyle span {
+    color: #fff;
+} */
+
+.swagger-ui .opblock .opblock-summary-operation-id, 
+.swagger-ui .opblock .opblock-summary-path, 
+.swagger-ui .opblock .opblock-summary-path__deprecated {
+    /* color: #f0f0f0; */
+}
+.swagger-ui .opblock {
+    /* background-color: #2a2a2a; */
+    /* border-color: #3e3e3e; */
+}
+.swagger-ui .opblock-tag {
+    /* border-bottom: 1px solid #3e3e3e; */
+}
+.swagger-ui .topbar {
+    /* background-color: #2a2a2a; */
+}
+.swagger-ui .btn {
+    /* background-color: #4a4a4a;
+    color: #f0f0f0; */
+} 
+/* Add more styles as needed */

@@ -25,7 +25,7 @@ import {
 //Context 
 import { useCamera } from '../contexts/cameraContext'; 
 import { useCardUID } from '../contexts/cardUidContext';
-import { userContext } from '../contexts/userContext';
+import { useUser } from '../contexts/userContext';
 
 // Constants
 const faceDectorModel = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
@@ -99,6 +99,10 @@ const WebCameraComponent = ({ enableDetectFace, isVisable }) => {
     const [faceDetected, setFaceDetected] = useState(false);
     const [detectingFace, setDetectingFace] = useState(true); 
     const [isReady, setIsReady] = useState(false);
+    const { user, setUser } = useUser();
+    const [imgSrc, setImgSrc] = useState(null);
+    const [hasCapturedImage, setHasCapturedImage] = useState(false);
+
 
 
     /* --- useEffect's for use with Facial Detection and Landmark Detection ---*/
@@ -166,6 +170,14 @@ const WebCameraComponent = ({ enableDetectFace, isVisable }) => {
                 const results = faceDetector.detectForVideo(video, performance.now());
                 if (results.detections.length > 0) {
                     setFaceDetected(true);
+                    // Only capture and download if we haven't already done so
+                    if (!hasCapturedImage) {
+                        const imageSrc = webcamRef.current.getScreenshot();
+                        setImgSrc(imageSrc);
+                        
+                        // downloadBase64File(imageSrc, 'txt');
+                        setHasCapturedImage(true); // Mark that we've captured an image
+                    };
                     setDetectingFace(false); // Stop showing "Face Not Detected"
                 } else {
                     setFaceDetected(false);
@@ -223,6 +235,23 @@ const WebCameraComponent = ({ enableDetectFace, isVisable }) => {
         };
     }, [isReady, faceLandmarker]);    
     /* --- useEfect's End --- */
+
+    /* --- Download Base64 File Function --- */
+    const downloadBase64File = (base64Data, fileType) => {
+    const link = document.createElement('a');
+    const timestamp = Date.now();
+    
+    if (fileType === 'txt') {
+      const blob = new Blob([base64Data], { type: 'text/plain' });
+      link.href = URL.createObjectURL(blob);
+      link.download = `webcam-base64-${timestamp}.txt`;
+    } else {
+      link.href = base64Data;
+      link.download = `webcam-capture-${timestamp}.jpeg`;
+    }
+    
+    link.click();
+  };
 
     /* --- Draw Face Landmark Results Function --- */
     const drawResults = (ctx, results) => {
