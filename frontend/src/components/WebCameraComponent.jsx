@@ -34,7 +34,8 @@ const deepFaceFacialRecognitionModel = import.meta.env.VITE_DEEPFACE_FACE_RECOGN
 const deepFaceDetector = import.meta.env.VITE_DEEPFACE_DETECTOR_BACKEND || "mediapipe";
 const deepFaceDistanceMetric = import.meta.env.VITE_DEEPFACE_DISTANCE_METRIC || "cosine";
 const deepFaceServiceEndpoint = import.meta.env.VITE_DEEPFACE_SERVICE_URL;
-const deepFaceAntiSpoofing = import.meta.env.VITE_DEEPFACE_ANTI_SPOOFING === "1"
+const deepFaceAntiSpoofing = import.meta.env.VITE_DEEPFACE_ANTI_SPOOFING === "1";
+const facialStepDelay = import.meta.env.VITE_FACIAL_STEP_DELAY;
 
 
 // Constants
@@ -101,7 +102,7 @@ const styles = {
         height: videoHeight,
     },
 }
-const WebCameraComponent = ({ enableDetectFace, isVisable }) => {
+const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, setStatus }) => {
     const { webcamRef, canvasRef } = useCamera();
     const [faceDetector, setFaceDetector] = useState(null);
     const [faceLandmarker, setFaceLandmarker] = useState(null);
@@ -142,7 +143,12 @@ const WebCameraComponent = ({ enableDetectFace, isVisable }) => {
                 runningMode: "VIDEO",
                 numFaces: 1
             });
-            setFaceDetector(detector);
+            
+            // Add 1 second delay before setting status
+            setTimeout(() => {
+                setStatus({ text: 'DETECTING FACE', color: '#3498db' });                
+                setFaceDetector(detector);
+            }, facialStepDelay); // 1000 milliseconds = 1 second
         };
         console.log('enableDetectFace: ', enableDetectFace);
         initializeFaceDetection();
@@ -164,7 +170,11 @@ const WebCameraComponent = ({ enableDetectFace, isVisable }) => {
             });
 
             setFaceLandmarker(landmarker);
-            setIsReady(true); // FaceLandmarker is ready
+            // Add 1 second delay before setting status
+            setTimeout(() => {
+                setStatus({ text: 'ANALYZING', color: '#FFC107' });
+                setIsReady(true); // FaceLandmarker is ready
+            }, facialStepDelay);
         };
 
         // Only initialize FaceLandmarker AFTER face is detected AND a delay
@@ -191,10 +201,10 @@ const WebCameraComponent = ({ enableDetectFace, isVisable }) => {
                     if (!localHasCaptured) {
                         const imageSrc = webcamRef.current.getScreenshot();
                         setImgSrc(imageSrc);
+                        localHasCaptured = true; // Set local variable to true
+                        setHasCapturedImage(true);
                         await verify(imageSrc);
                         // downloadBase64File(imageSrc, 'txt'); 
-                        setHasCapturedImage(true);
-                        localHasCaptured = true; 
                     };
                     setDetectingFace(false); // Stop showing "Face Not Detected"
                 } else {
@@ -287,7 +297,7 @@ const WebCameraComponent = ({ enableDetectFace, isVisable }) => {
               }
             );
     
-            console.log(`calling service endpoint ${deepFaceServiceEndpoint}/verify`)
+            // console.log(`calling service endpoint ${deepFaceServiceEndpoint}/verify`)
             
             
             const response = await fetch(`${deepFaceServiceEndpoint}/verify`, {
@@ -297,20 +307,11 @@ const WebCameraComponent = ({ enableDetectFace, isVisable }) => {
               },
               body: requestBody,
             });
-
-            // const response = await axios.post(`${deepFaceServiceEndpoint}/verify`, {
-            //   headers: {
-            //     'Content-Type': 'application/json',
-            //   },
-            //   body: requestBody,
-            // });
     
             const data = await response.json();
 
-            console.log('response: ', response);
-            console.log('data: ', data);
-
-                
+            // console.log('response: ', response);
+            // console.log('data: ', data);
             // Save verification results to file
             // downloadJsonFile(data, `verification-results-${Date.now()}.json`);
     
@@ -318,30 +319,40 @@ const WebCameraComponent = ({ enableDetectFace, isVisable }) => {
             // Store the verification data for display
             setVerificationData(data);
             // Open the dialog to show results
-            setOpenDialog(true);
+            // setOpenDialog(true);
     
             if (response.status !== 200) {
               console.log(data.error);
               setIsVerified(false);
               return
             }
-      
+            // if isVerified key is true 
             if (data.verified === true) {
               setIsVerified(true);
               setIsAnalyzed(false);
-              //break;
+              setStatus({ text: 'SUCCESS', color: '#4CAF50' });
+            //   downloadJsonFile(data, `verification-results-${Date.now()}.json`);
+              // Add 1 second delay before setting status
+              setTimeout(() => {
+                setActiveComponent('deviceSelection');
+              }, facialStepDelay); 
             }
-          // if isVerified key is not true after for loop, then it is false
-          if (isVerified === null) {
-            setIsVerified(false);
-          }
+            // if isVerified key is false
+            if (data.verified === false) {
+                setIsVerified(false);
+                setStatus({ text: 'FAILED', color: '#F44336' });
+                // downloadJsonFile(data, `verification-results-${Date.now()}.json`);
+                setTimeout(() => {
+                    setActiveComponent('failedUserRecognition');
+                }, facialStepDelay);
+            }
           
         }
         catch (error) {
           console.error('Exception while verifying image:', error);
           // Show error in dialog
           setVerificationData({ error: error.message });
-          setOpenDialog(true);
+        //   setOpenDialog(true);
         }
     
       };

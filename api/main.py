@@ -16,7 +16,7 @@ from control_door import toggle_door as control_toggle_door
 from control_door import get_status as get_door_status
 from control_door import open_door as control_open_door
 from control_door import close_door as control_close_door
-from shared_state import CARD_UID, CARD_PRESSENT
+from shared_state import CARD_UID, CARD_PRESSENT, FACIAL_RECOGNITION_ATTEMPTS
 import subprocess
 import threading
 import uvicorn
@@ -24,6 +24,7 @@ import os
 import re # Using for String replacement
 from dotenv import load_dotenv
 from typing import Union
+import requests
 
 # Load environment variables
 load_dotenv()
@@ -48,6 +49,14 @@ class CardResponse(BaseModel):
     status: str
     message: str
     card_uid: Union[str, int] = None
+
+class FacialRecognitionAttemptsResponse(BaseModel):
+    status: str
+    message: str
+    attempts: int = None
+
+class SetAttemptsRequest(BaseModel):
+    attempts: int
 
 class ApiResponse(BaseModel):
     status: str
@@ -314,6 +323,153 @@ def toggle_door(api_key: str = Depends(get_api_key)):
             'status': 'error',
             'message': f'Failed to toggle door: {str(e)}'
         }
+
+
+
+##########################################
+#          API Routes:  TinyTuya         #
+##########################################
+
+@app.get('/tinytuya/status/{device_id}', tags=["Tiny Tuya Control"])    
+def device_status(device_id: str, api_key: str = Depends(get_api_key)):
+    """
+    Get the current status of the passed in TinyTuya device (on or off).
+    Requires API Key authentication.
+    
+    Returns:
+    - Current TinyTuya device status information
+    """
+    try:
+        # Make a request to the TinyTuya API
+        response = requests.get(f"http://localhost:8888/status/{device_id}")
+        
+        # Check if the request was successful
+        if response.status_code == 200:
+            # Return the JSON response directly
+            return response.json()
+        else:
+            return {
+                'status': 'error',
+                'message': f'Failed to get device status: HTTP {response.status_code}'
+            }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': f'Failed to get device status: {str(e)}'
+        }
+
+@app.get('/tinytuya/turnon/{device_id}', tags=["Tiny Tuya Control"])    
+def turn_on_device(device_id: str, api_key: str = Depends(get_api_key)):
+    """
+    Turn on the specified TinyTuya device.
+    Requires API Key authentication.
+    
+    Returns:
+    - Status of the turn on operation
+    """
+    try:
+        # Make a request to the TinyTuya API
+        response = requests.get(f"http://localhost:8888/turnon/{device_id}")
+        
+        # Check if the request was successful
+        if response.status_code == 200:
+            # Return the JSON response directly
+            return response.json()
+        else:
+            return {
+                'status': 'error',
+                'message': f'Failed to turn on device: HTTP {response.status_code}'
+            }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': f'Failed to turn on device: {str(e)}'
+        }
+
+@app.get('/tinytuya/turnoff/{device_id}', tags=["Tiny Tuya Control"])    
+def turn_off_device(device_id: str, api_key: str = Depends(get_api_key)):
+    """
+    Turn off the specified TinyTuya device.
+    Requires API Key authentication.
+    
+    Returns:
+    - Status of the turn off operation
+    """
+    try:
+        # Make a request to the TinyTuya API
+        response = requests.get(f"http://localhost:8888/turnoff/{device_id}")
+        
+        # Check if the request was successful
+        if response.status_code == 200:
+            # Return the JSON response directly
+            return response.json()
+        else:
+            return {
+                'status': 'error',
+                'message': f'Failed to turn off device: HTTP {response.status_code}'
+            }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': f'Failed to turn off device: {str(e)}'
+        }
+
+
+
+#############################################
+#       API Routes: Facial Recognition      #
+#############################################
+
+@app.get('/facial-recognition/attempts', tags=["Facial Recognition"], response_model=FacialRecognitionAttemptsResponse)
+def get_facial_recognition_attempts(api_key: str = Depends(get_api_key)):
+    """
+    Get the current number of facial recognition attempts.
+    Requires API Key authentication.
+    
+    Returns:
+    - Current number of facial recognition attempts
+    """
+    try:
+        import shared_state  # Import shared state module to access the global variable
+        return {
+            'status': 'success',
+            'message': 'Facial recognition attempts retrieved successfully',
+            'attempts': shared_state.FACIAL_RECOGNITION_ATTEMPTS
+        }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': f'Failed to get facial recognition attempts: {str(e)}'
+        }
+
+@app.post('/facial-recognition/attempts', tags=["Facial Recognition"], response_model=ApiResponse)
+def set_facial_recognition_attempts(
+    attempts_request: SetAttemptsRequest = Body(..., example={"attempts": 0}),
+    api_key: str = Depends(get_api_key)
+):
+    """
+    Set the number of facial recognition attempts.
+    Requires API Key authentication.
+    
+    Parameters:
+    - **attempts**: New value for the facial recognition attempts counter
+    
+    Returns:
+    - Success or error message
+    """
+    try:
+        import shared_state
+        shared_state.FACIAL_RECOGNITION_ATTEMPTS = attempts_request.attempts
+        return {
+            'status': 'success',
+            'message': f'Facial recognition attempts set to {attempts_request.attempts}'
+        }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': f'Failed to set facial recognition attempts: {str(e)}'
+        }
+
 
 ##########################################
 #          API Routes:  General          #

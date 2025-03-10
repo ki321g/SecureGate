@@ -16,6 +16,7 @@ import WebCameraObjectDectionComponent from '../components/WebCameraObjectDectio
 import LogoComponent from '../components/LogoComponent';
 import ScanCardComponent from '../components/ScanCardComponent';
 import UserRecognitionComponent from '../components/UserRecognitionComponent';
+import FailedUserRecognitionComponent from '../components/FailedUserRecognitionComponent';
 import DeviceSelectionComponent from '../components/DeviceSelectionComponent';
 import EnterPinComponent from '../components/EnterPinComponent';
 
@@ -74,6 +75,7 @@ const styles = {
     },
     detectorContentBox: {
         display: 'flex',
+        overflowY: 'none',
         flexDirection: 'column',
         justifyContent: 'space-between',
         height: videoHeight,
@@ -101,7 +103,13 @@ const HomePage = () => {
     const [ cardReader, setCardReader ] = useState(false);
     const [ showFaceDector, setShowFaceDector ] = useState(false);
     const [ enableDetectFace, setEnableDetectFace ] = useState(false);
-    const [ activeComponent, setActiveComponent ] = useState('scanCard'); 
+    const [recognitionAttempts, setRecognitionAttempts] = useState(0);
+    // const [ activeComponent, setActiveComponent ] = useState('deviceSelection');
+    const [ activeComponent, setActiveComponent ] = useState('scanCard');
+    const [status, setStatus] = useState({
+        text: 'DETECTING FACE',
+        color: '#4CAF50'
+    });
     
     useEffect(() => {
 
@@ -170,7 +178,7 @@ const HomePage = () => {
                 <Container id='DetectorContainer' maxWidth={false} disableGutters sx={ styles.detectorMainContainer }>
                     <Stack id='DetectorStack' direction="row" spacing={2} spacing={3} sx={ styles.detectorMainStack }>
                         {/* Left Column: WebCameraComponent Video and Canvas */}
-                        <WebCameraComponent enableDetectFace={ enableDetectFace } isVisable={ true } />
+                        <WebCameraComponent enableDetectFace={ enableDetectFace } isVisable={ true } setActiveComponent={ setActiveComponent } setStatus={ setStatus }/>
                         {/* Right Column: Content */}
                         <Box id='DetectorContentBox' sx={ styles.detectorContentBox }>
                             {activeComponent === 'scanCard' && 
@@ -180,8 +188,18 @@ const HomePage = () => {
                                 <EnterPinComponent setEnableDetectFace={ setEnableDetectFace } setActiveComponent={ setActiveComponent }/>
                             }
                             {activeComponent === 'userRecognition' && 
-                                <UserRecognitionComponent setActiveComponent={ setActiveComponent }/>
+                                <UserRecognitionComponent setActiveComponent={ setActiveComponent } status={ status }/>
                             }
+                            {activeComponent === 'failedUserRecognition' && 
+                                <FailedUserRecognitionComponent setActiveComponent={ setActiveComponent }/>
+                            }
+                            {/* {activeComponent === 'failedUserRecognition' && 
+                                <FailedUserRecognitionComponent 
+                                    setActiveComponent={setActiveComponent}
+                                    attempts={recognitionAttempts}
+                                    setAttempts={setRecognitionAttempts}
+                                />
+                            } */}
                             {activeComponent === 'deviceSelection' && 
                                 <DeviceSelectionComponent setActiveComponent={ setActiveComponent }/>
                             }
@@ -192,7 +210,7 @@ const HomePage = () => {
         )}	
 
          {/* ToggleButtonComponent: Used during Development Remove of comment out */}
-        <ToggleButtonComponent showFaceDector={ showFaceDector } setShowFaceDector={ setShowFaceDector }/>
+        {/* <ToggleButtonComponent showFaceDector={ showFaceDector } setShowFaceDector={ setShowFaceDector }/> */}
     </>
   );
 }
