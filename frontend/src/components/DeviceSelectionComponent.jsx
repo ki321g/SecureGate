@@ -23,12 +23,14 @@ import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 
 // Import DataContext
+import { useUser } from '../contexts/userContext';
 import { useData } from '../contexts/dataContext';
 
 // API key and base URL from environment variables
 const API_KEY = import.meta.env.VITE_BACKEND_API_KEY;
 const API_BASE_URL = import.meta.env.VITE_BACKEND_API_BASE_URL;
 const TINYTUYA_API_BASE_URL = import.meta.env.VITE_TINYTUYA_API_BASE_URL;
+import { functionApi } from '../api/supabase/supabaseApi'
 
 const styles = {
   contentWrapper: {
@@ -142,28 +144,30 @@ const DeviceSelectionComponent = () => {
   const [selectedDevices, setSelectedDevices] = useState([]);
   
   // Get devices from DataContext
-  const { devices } = useData();
-  
+  const { devices, setDevices } = useData();
+  const { user, setUser } = useUser();
 
-   // Function to control the door (open, close, toggle)
-   const controlDoor = async (action) => {
-    try {      
-      const response = await axios.post(`${API_BASE_URL}/door`, 
-        { action }, // request body
-        {
-          headers: {
-            'X-API-Key': API_KEY,
-            'Content-Type': 'application/json'
-          }
+   // Fetch user devices on component mount
+   useEffect(() => {
+    const fetchUserDevices = async () => {
+        try {
+             const { data, error } = await functionApi.invoke('get_devices_by_user_uid', { user_uid: user.uid });
+            
+            if (error) throw error;
+            setDevices(data);
+            console.log('DEVICES:', data)
+
+        } catch (error) {
+            console.error('Error fetching DEVICES data:', error.message);
         }
-      );
-      const result = response.data;
+    };
+    fetchUserDevices();
+}, []);
 
-    } catch (err) {
-    setError(`Failed to ${action} door: ${err.message}`);
-    } finally {
-    }
-  };
+  // Fetch device status on component mount
+  useEffect(() => {
+    fetchDeviceStatus();
+  }, [devices]);
 
   // Function to fetch and update device status
   const fetchDeviceStatus = async () => {
@@ -204,12 +208,27 @@ const DeviceSelectionComponent = () => {
     } finally {
       setRefreshingStatus(false);
     }
+  }; 
+
+   // Function to control the door (open, close, toggle)
+   const controlDoor = async (action) => {
+    try {      
+      const response = await axios.post(`${API_BASE_URL}/door`, 
+        { action }, // request body
+        {
+          headers: {
+            'X-API-Key': API_KEY,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      const result = response.data;
+
+    } catch (err) {
+    setError(`Failed to ${action} door: ${err.message}`);
+    } finally {
+    }
   };
-  
-  // Fetch device status on component mount
-  useEffect(() => {
-    fetchDeviceStatus();
-  }, [devices]);
   
   // Handle device selection
   const toggleDeviceSelection = (deviceId) => {

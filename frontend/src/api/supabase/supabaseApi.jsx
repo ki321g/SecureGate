@@ -186,6 +186,18 @@ export const roleToDeviceApi = {
 }
 
 /*
+ * Supabase Function API Functions
+ */
+export const functionApi = {
+  invoke: async (functionName, params) => {
+    const { data: response, error } = await supabase
+      .rpc(functionName, params)
+    return { data: response, error }
+  }
+}
+
+
+/*
  * Supabase Access Logs Table API Functions
  */
 export const accessLogsApi = {

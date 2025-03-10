@@ -28,8 +28,8 @@ import { rolesApi, devicesApi, roleToDeviceApi } from '../api/supabase/supabaseA
 
 //Context 
 import { useCardUID } from '../contexts/cardUidContext';
-import { useUser } from '../contexts/userContext';
 import { useData } from '../contexts/dataContext';
+import { useUser } from '../contexts/userContext';
 
 const videoWidth = 1024;
 const videoHeight = 576;
@@ -111,50 +111,50 @@ const HomePage = () => {
         color: '#4CAF50'
     });
     
-    useEffect(() => {
+    // useEffect(() => {
 
-        const fetchRolesData = async () => {
-            try {
-                    const { data, error } = await rolesApi.getAll();
+    //     const fetchRolesData = async () => {
+    //         try {
+    //                 const { data, error } = await rolesApi.getAll();
                 
-                    if (error) throw error;
-                    setRoles(data);
-                    console.log('ROLES:', data);
-            } catch (error) {
-                console.error('Error fetching ROLES data:', error.message);
-            }
-        };
+    //                 if (error) throw error;
+    //                 setRoles(data);
+    //                 console.log('ROLES:', data);
+    //         } catch (error) {
+    //             console.error('Error fetching ROLES data:', error.message);
+    //         }
+    //     };
 
-        const fetchDevicesData = async () => {
-            try {
-                const { data, error } = await devicesApi.getAll();
+    //     const fetchDevicesData = async () => {
+    //         try {
+    //             const { data, error } = await devicesApi.getAll();
                 
-                if (error) throw error;
-                setDevices(data);
-                console.log('DEVICES:', data);
+    //             if (error) throw error;
+    //             setDevices(data);
+    //             console.log('DEVICES:', data);
 
-            } catch (error) {
-                console.error('Error fetching DEVICES data:', error.message);
-            }
-        };
+    //         } catch (error) {
+    //             console.error('Error fetching DEVICES data:', error.message);
+    //         }
+    //     };
 
-        const fetchRolesToDevicesData = async () => {
-            try {
-                const { data, error } = await roleToDeviceApi.getAll();
+    //     const fetchRolesToDevicesData = async () => {
+    //         try {
+    //             const { data, error } = await roleToDeviceApi.getAll();
                 
-                if (error) throw error;
-                setRolesToDevices(data); 
-                console.log('RoleToDevices:', data);
+    //             if (error) throw error;
+    //             setRolesToDevices(data); 
+    //             console.log('RoleToDevices:', data);
 
-            } catch (error) {
-                console.error('Error fetching RolesToDevices data:', error.message);
-            }
-        };
-            //devicesApi, roleToDeviceApi roleToDevices
-        fetchRolesData();
-        fetchDevicesData();
-        fetchRolesToDevicesData();
-    }, []);
+    //         } catch (error) {
+    //             console.error('Error fetching RolesToDevices data:', error.message);
+    //         }
+    //     };
+    //         //devicesApi, roleToDeviceApi roleToDevices
+    //     fetchRolesData();
+    //     fetchDevicesData();
+    //     fetchRolesToDevicesData();
+    // }, []);
 
   return (
     <>
