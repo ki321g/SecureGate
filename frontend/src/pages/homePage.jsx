@@ -210,7 +210,7 @@ const HomePage = () => {
         )}	
 
          {/* ToggleButtonComponent: Used during Development Remove of comment out */}
-        {/* <ToggleButtonComponent showFaceDector={ showFaceDector } setShowFaceDector={ setShowFaceDector }/> */}
+        <ToggleButtonComponent showFaceDector={ showFaceDector } setShowFaceDector={ setShowFaceDector }/>
     </>
   );
 }

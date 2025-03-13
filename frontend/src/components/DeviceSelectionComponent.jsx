@@ -54,28 +54,7 @@ const styles = {
     padding: '12px',
     border: '2px solid #e0e0e0',
     backgroundColor: '#1e1e1e',
-    marginBottom: '20px',
-    // Custom scrollbar for touch screens
-    // '&::-webkit-scrollbar': {
-    //   width: '40px', // Wider scrollbar      
-    // },
-    // '&::-webkit-scrollbar-track': {
-    //   background: '#2a2a2a', // Scrollbar track color
-    //   // borderRadius: '8px',
-    // },
-    // '&::-webkit-scrollbar-thumb': {
-    //   background: '#555', // Scrollbar thumb color
-    //   // borderRadius: '8px',
-    //   border: '3px solid #2a2a2a', // Creates padding around the scrollbar
-    //   width: '40px',
-    // },
-    // '&::-webkit-scrollbar-thumb:hover': {
-    //   background: '#777', // Hover color
-    //   width: '40px',
-    // },
-    // // For Firefox
-    // scrollbarWidth: 'thick',
-    // scrollbarColor: '#555 #2a2a2a',
+    marginBottom: '20px', 
   },    
   deviceItem: {
     padding: '8px 12px',
@@ -147,22 +126,42 @@ const DeviceSelectionComponent = () => {
   const { devices, setDevices } = useData();
   const { user, setUser } = useUser();
 
-   // Fetch user devices on component mount
-   useEffect(() => {
-    const fetchUserDevices = async () => {
-        try {
-             const { data, error } = await functionApi.invoke('get_devices_by_user_uid', { user_uid: user.uid });
-            
-            if (error) throw error;
-            setDevices(data);
-            console.log('DEVICES:', data)
-
-        } catch (error) {
-            console.error('Error fetching DEVICES data:', error.message);
-        }
+   // On component mount reset the facial recognition attempts count and fetch user devices
+    useEffect(() => {
+      resetFacialRecognitionAttemptsCount();
+      fetchUserDevices();
+    }, []);
+    
+    const resetFacialRecognitionAttemptsCount = async () => {
+      try {
+        const response = await axios.post(
+          `${API_BASE_URL}/facial-recognition/attempts`,
+          { attempts: 0 },
+          {
+              headers: {
+                  'X-API-Key': API_KEY,
+                  'Content-Type': 'application/json'
+              }
+          }
+      );
+        
+        console.log('Count reset successfully:', response.data);
+      } catch (error) {
+        console.error('Failed to reset count:', error);
+      }
     };
-    fetchUserDevices();
-}, []);
+    const fetchUserDevices = async () => {
+      try {
+          const { data, error } = await functionApi.invoke('get_devices_by_user_uid', { user_uid: user.uid });
+          
+          if (error) throw error;
+          setDevices(data);
+          console.log('DEVICES:', data)
+
+      } catch (error) {
+          console.error('Error fetching DEVICES data:', error.message);
+      }
+  };
 
   // Fetch device status on component mount
   useEffect(() => {
