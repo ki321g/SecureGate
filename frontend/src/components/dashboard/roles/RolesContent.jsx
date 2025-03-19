@@ -444,15 +444,11 @@ const RolesContent = () => {
         enableRowSelection
         enableRowActions
         positionActionsColumn="last"
-        // muiTableBodyRowProps={{ hover: true }}
         renderRowActions={({ row }) => (
           <Box sx={{ display: 'flex', gap: '2px' }}>
             <Tooltip title="Edit">
               <IconButton 
                 onClick={() => handleEdit(row)}
-                // onClick={() => {
-                //   table.setEditingRow(row);
-                // }}
                 sx={{ fontSize: '2rem' }}>
                 <EditIcon fontSize="inherit"/>
               </IconButton>
@@ -475,8 +471,6 @@ const RolesContent = () => {
           }
         }}
       />
-      
-
 
       {/* Modal */}
       <Dialog 
