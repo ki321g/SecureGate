@@ -84,9 +84,20 @@ const DashboardPage = () => {
       </Box>
       <Box
         component="main"
-        sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
+        // sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
+        sx={{ 
+          flexGrow: 1, 
+          p: 15, 
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          justifyContent: 'flex-start', // Align content to the top
+          height: '100vh', // Take full viewport height
+          overflow: 'auto' // Add scrolling if content is too tall
+        }}
       >
-        <Toolbar />
+        {/* <Toolbar /> */}
         <SidebarContent selectedItem={selectedItem} />
       </Box>
     </Box>
