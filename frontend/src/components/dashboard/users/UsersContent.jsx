@@ -41,6 +41,8 @@ const UsersContent = () => {
 	const { users, setUsers } = useData();
   const { roles, setRoles } = useData();
   const [isLoading, setIsLoading] = useState(true);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [selectedUserForImage, setSelectedUserForImage] = useState(null);
   
   // Modal State  
   const [modalState, setModalState] = useState({
@@ -213,47 +215,35 @@ const UsersContent = () => {
           </Typography>
         ),
       },
-      // {
-      //   accessorKey: 'user_picture',
-      //   header: 'User Picture',
-      //   enableClickToCopy: true,
-      //   size: 50,
-      //   Cell: ({ cell }) => {
-      //     const fullId = cell.getValue();
-      //     // Display 15 characters followed by ...
-      //     const truncatedId = fullId ? `${fullId.substring(0, 10)}...` : '';
-          
-      //     return (
-      //       <Tooltip title={fullId}>
-      //         <Typography sx={{ fontSize: '1.2rem' }}>
-      //           {truncatedId}
-      //         </Typography>
-      //       </Tooltip>
-      //     );
-      //   },
-      // },
+     
+
       {
         accessorKey: 'user_picture',
         header: 'Picture',
-        enableClickToCopy: false, // Changed to false since copying an image base64 is less useful
-        size: 80, // Increased size to accommodate the image
-        Cell: ({ cell }) => {
+        enableClickToCopy: false,
+        size: 80,
+        Cell: ({ cell, row }) => {
           const base64Image = cell.getValue();
-          const defaultImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwMCI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgM2MyLjY3IDAgOCAyLjY3IDggOHYxYzAgMS4xLS45IDItMiAyaC0xMmMtMS4xIDAtMi0uOS0yLTJ2LTFjMC01LjMzIDUuMzMtOCA4LTh6bTAgMTNjLTIuMjEgMC00LTEuNzktNC00aDhjMCAyLjIxLTEuNzkgNC00IDR6Ii8+PC9zdmc+'; // Simple user icon in SVG format
           
           return (
             <Box 
               sx={{ 
                 display: 'flex', 
                 justifyContent: 'center',
-                // alignItems: 'center',
                 height: '70px',
                 width: '70px',
-                margin: '0 auto'
+                margin: '0 auto',
+                cursor: 'pointer' // Add cursor pointer to indicate it's clickable
+              }}
+              onClick={() => {
+                if (base64Image) {
+                  setSelectedUserForImage(row.original);
+                  setImageModalOpen(true);
+                }
               }}
             >
               <img 
-                src={base64Image || defaultImage} 
+                src={base64Image} 
                 alt="User"
                 style={{ 
                   maxHeight: '100%', 
@@ -263,7 +253,7 @@ const UsersContent = () => {
                   border: '1px solid #ddd'
                 }}
                 onError={(e) => {
-                  e.target.onerror = null; // Prevent infinite loop
+                  e.target.onerror = null;
                   e.target.src = defaultImage;
                 }}
               />
@@ -393,9 +383,33 @@ const UsersContent = () => {
   };
 
   // Create new role
+  // const handleCreate = async () => {
+  //   try {
+  //     const { data, error } = await usersApi.create(modalState.formData);
+      
+  //     if (error) throw error;
+      
+  //     if (data && data.length > 0) {
+  //       // Add the new role to the roles array
+  //       setUsers([...users, data[0]]);
+  //       handleCloseModal();
+  //     } else {
+  //       throw new Error('No data returned from create operation');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error creating user:', error.message);
+  //   }
+  // };
   const handleCreate = async () => {
     try {
-      const { data, error } = await usersApi.create(modalState.formData);
+      // Check if user_picture is null and set default image if needed
+      const formDataToSubmit = { ...modalState.formData };
+      
+      if (!formDataToSubmit.user_picture) {
+        formDataToSubmit.user_picture = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwMCI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgM2MyLjY3IDAgOCAyLjY3IDggOHYxYzAgMS4xLS45IDItMiAyaC0xMmMtMS4xIDAtMi0uOS0yLTJ2LTFjMC01LjMzIDUuMzMtOCA4LTh6bTAgMTNjLTIuMjEgMC00LTEuNzktNC00aDhjMCAyLjIxLTEuNzkgNC00IDR6Ii8+PC9zdmc+';
+      }
+      
+      const { data, error } = await usersApi.create(formDataToSubmit);
       
       if (error) throw error;
       
@@ -410,6 +424,7 @@ const UsersContent = () => {
       console.error('Error creating user:', error.message);
     }
   };
+  
 
 
   // Confirm and execute delete
@@ -877,6 +892,92 @@ const UsersContent = () => {
       >
         {renderModalContent()}
       </Dialog>
+
+      {/* Image Modal */}
+{/* <Dialog
+  open={imageModalOpen}
+  onClose={() => setImageModalOpen(false)}
+  maxWidth="md"
+>
+  <DialogTitle sx={{ fontSize: '1.8rem' }}>
+    {selectedUserForImage && `${selectedUserForImage.first_name} ${selectedUserForImage.last_name}`}
+  </DialogTitle>
+  <DialogContent sx={{ p: 1 }}>
+    {selectedUserForImage && selectedUserForImage.user_picture && (
+      <img
+        src={selectedUserForImage.user_picture}
+        alt={`${selectedUserForImage.first_name} ${selectedUserForImage.last_name}`}
+        style={{
+          maxWidth: '100%',
+          maxHeight: '70vh', // Limit height to 70% of viewport height
+          display: 'block',
+          margin: '0 auto',
+        }}
+      />
+    )}
+  </DialogContent>
+  <DialogActions>
+    <Button 
+      onClick={() => setImageModalOpen(false)} 
+      variant="contained"
+      sx={{ fontSize: '1.2rem' }}
+    >
+      Close
+    </Button>
+  </DialogActions>
+</Dialog> */}
+
+{/* Image Modal */}
+<Dialog
+  open={imageModalOpen}
+  onClose={() => setImageModalOpen(false)}
+  maxWidth="md" // Keep this to set the maximum width category
+  // Add this to force a specific width
+  PaperProps={{
+    sx: {
+      width: '600px', // Set a fixed width
+      height: '600px', // Set a fixed height
+      maxHeight: '80vh', // Limit maximum height to 80% of viewport height
+    }
+  }}
+>
+  <DialogTitle sx={{ fontSize: '1.8rem' }}>
+    {selectedUserForImage && `${selectedUserForImage.first_name} ${selectedUserForImage.last_name}`}
+  </DialogTitle>
+  <DialogContent 
+    sx={{ 
+      p: 1,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '450px' // Fixed height for the content area
+    }}
+  >
+    {selectedUserForImage && selectedUserForImage.user_picture && (
+      <img
+        src={selectedUserForImage.user_picture}
+        alt={`${selectedUserForImage.first_name} ${selectedUserForImage.last_name}`}
+        style={{
+          maxWidth: '100%',
+          maxHeight: '100%',
+          objectFit: 'contain', // This ensures the image maintains its aspect ratio
+          display: 'block',
+        }}
+      />
+    )}
+  </DialogContent>
+  <DialogActions>
+    <Button 
+      onClick={() => setImageModalOpen(false)} 
+      variant="contained"
+      sx={{ fontSize: '1.2rem' }}
+    >
+      Close
+    </Button>
+  </DialogActions>
+</Dialog>
+
+
     </Box>
   );
 }
