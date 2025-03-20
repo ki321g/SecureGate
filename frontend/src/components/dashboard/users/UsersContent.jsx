@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
+import axios from 'axios';
 import Typography from '@mui/material/Typography';
 import { 
   Box, 
@@ -23,8 +24,6 @@ import {
 // import { MaterialReactTable } from 'material-react-table';
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
 
-
-
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -36,6 +35,10 @@ import { useData } from '../../../contexts/dataContext';
 // API
 import { usersApi, rolesApi, devicesApi, roleToDeviceApi } from '../../../api/supabase/supabaseApi';
 
+// API key and base URL from environment variables
+const API_KEY = import.meta.env.VITE_BACKEND_API_KEY;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_API_BASE_URL;
+
 const UsersContent = () => {
   const theme = useTheme();
 	const { users, setUsers } = useData();
@@ -43,6 +46,9 @@ const UsersContent = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [selectedUserForImage, setSelectedUserForImage] = useState(null);
+  const [isCardReading, setIsCardReading] = useState(false);
+  const [cardReadingInterval, setCardReadingInterval] = useState(null);
+
   
   // Modal State  
   const [modalState, setModalState] = useState({
@@ -107,6 +113,16 @@ const UsersContent = () => {
     
     fetchRoles();
   }, [setRoles]);
+
+  // clean up the interval when the component unmounts
+  useEffect(() => {
+    return () => {
+      if (cardReadingInterval) {
+        clearInterval(cardReadingInterval);
+      }
+    };
+  }, [cardReadingInterval]);
+  
 
   // Define columns for the table
   const columns = useMemo(
@@ -185,20 +201,41 @@ const UsersContent = () => {
           </Typography>
         ),
       },
+      // {
+      //   accessorKey: 'role_id',
+      //   header: 'Role ID',
+      //   enableClickToCopy: true,
+      //   size: 50,
+      //   Cell: ({ cell }) => {
+      //     const fullId = cell.getValue();
+      //     // Display 15 characters followed by ...
+      //     const truncatedId = fullId ? `${fullId.substring(0, 10)}...` : '';
+          
+      //     return (
+      //       <Tooltip title={fullId}>
+      //         <Typography sx={{ fontSize: '1.2rem' }}>
+      //           {truncatedId}
+      //         </Typography>
+      //       </Tooltip>
+      //     );
+      //   },
+      // },
       {
         accessorKey: 'role_id',
-        header: 'Role ID',
+        header: 'Role',  // Changed from 'Role ID' to 'Role'
         enableClickToCopy: true,
         size: 50,
-        Cell: ({ cell }) => {
-          const fullId = cell.getValue();
-          // Display 15 characters followed by ...
-          const truncatedId = fullId ? `${fullId.substring(0, 10)}...` : '';
+        Cell: ({ cell, row }) => {
+          const roleId = cell.getValue();
+          // Find the role object that matches the role_id
+          const role = roles.find(r => r.role_id === roleId);
+          // Get the role name, or display the ID if role not found
+          const roleName = role ? role.role_name : roleId;
           
           return (
-            <Tooltip title={fullId}>
+            <Tooltip title={roleId}>
               <Typography sx={{ fontSize: '1.2rem' }}>
-                {truncatedId}
+                {roleName}
               </Typography>
             </Tooltip>
           );
@@ -341,6 +378,7 @@ const UsersContent = () => {
 
   // Close modal
   const handleCloseModal = () => {
+    stopCardReading();
     setModalState(prev => ({
       ...prev,
       isOpen: false
@@ -349,6 +387,9 @@ const UsersContent = () => {
 
   // Handle input change for edit form
   const handleInputChange = (e) => {
+    if(isCardReading){
+      stopCardReading();
+    }
     const { name, value } = e.target;
     setModalState(prev => ({
       ...prev,
@@ -383,23 +424,6 @@ const UsersContent = () => {
   };
 
   // Create new role
-  // const handleCreate = async () => {
-  //   try {
-  //     const { data, error } = await usersApi.create(modalState.formData);
-      
-  //     if (error) throw error;
-      
-  //     if (data && data.length > 0) {
-  //       // Add the new role to the roles array
-  //       setUsers([...users, data[0]]);
-  //       handleCloseModal();
-  //     } else {
-  //       throw new Error('No data returned from create operation');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error creating user:', error.message);
-  //   }
-  // };
   const handleCreate = async () => {
     try {
       // Check if user_picture is null and set default image if needed
@@ -444,6 +468,55 @@ const UsersContent = () => {
       console.error('Error deleting user:', error.message);
     }
   };
+
+
+  // Read Card
+  const readCard = async () => {
+    try {            
+      const response = await axios.get(`${API_BASE_URL}/card/uid`, {
+        headers: {
+          'X-API-Key': API_KEY,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log(response);
+      if (response.data) {
+        // Update the form data with the card UID
+        setModalState(prev => ({
+          ...prev,
+          formData: {
+            ...prev.formData,
+            card_id: response.data.card_uid
+          }
+        }));
+        
+        // Check if the scan was successful
+        if (response.data.status === 'success') {
+          // Stop reading if we got a successful scan
+          stopCardReading();
+        }
+      }
+    } catch (error) {
+      console.error('Error reading card:', error);
+    }
+  };
+  
+
+  const startCardReading = () => {
+    setIsCardReading(true);
+    const interval = setInterval(() => {
+      readCard();
+    }, 100);
+    setCardReadingInterval(interval);
+  };
+  
+  const stopCardReading = () => {
+    clearInterval(cardReadingInterval);
+    setCardReadingInterval(null);
+    setIsCardReading(false);
+  };
+  
 
    
   // Render modal content based on mode
@@ -529,7 +602,7 @@ const UsersContent = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={6}>
+              {/* <Grid item xs={6}>
                 <TextField
                   fullWidth
                   label="Card UID"
@@ -538,7 +611,41 @@ const UsersContent = () => {
                   onChange={handleInputChange}
                   sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
                 />
+              </Grid> */}
+
+              <Grid item xs={6}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <TextField
+                    // fullWidth
+                    label="Card UID"
+                    name="card_id"
+                    value={formData.card_id}
+                    onChange={handleInputChange}
+                    sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={isCardReading ? stopCardReading : startCardReading}
+                    sx={{ 
+                      minWidth: '120px',
+                      fontSize: '1.1rem',
+                      backgroundColor: isCardReading ? 'error.main' : 'primary.main'
+                    }}
+                  >
+                    {isCardReading ? 'Stop Scan' : 'Scan Card'}
+                  </Button>
+                </Box>
+                {isCardReading && (
+                  <Typography sx={{ mt: 1, color: 'info.main', fontSize: '1.2rem' }}>
+                    Please scan a card now...
+                  </Typography>
+                )}
               </Grid>
+
+
+
+
+
             </Grid>
           </DialogContent>
           <DialogActions>
@@ -648,7 +755,7 @@ const UsersContent = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={6}>
+              {/* <Grid item xs={6}>
                 <TextField
                   fullWidth
                   label="Card UID"
@@ -657,7 +764,36 @@ const UsersContent = () => {
                   onChange={handleInputChange}
                   sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
                 />
+              </Grid> */}
+              <Grid item xs={6}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <TextField
+                    // fullWidth
+                    label="Card UID"
+                    name="card_id"
+                    value={formData.card_id}
+                    onChange={handleInputChange}
+                    sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={isCardReading ? stopCardReading : startCardReading}
+                    sx={{ 
+                      minWidth: '120px',
+                      fontSize: '1.1rem',
+                      backgroundColor: isCardReading ? 'error.main' : 'primary.main'
+                    }}
+                  >
+                    {isCardReading ? 'Stop Scan' : 'Scan Card'}
+                  </Button>
+                </Box>
+                {isCardReading && (
+                  <Typography sx={{ mt: 1, color: 'info.main', fontSize: '1.2rem' }}>
+                    Please scan a card now...
+                  </Typography>
+                )}
               </Grid>
+
               <Grid item xs={12}>
                 <ToggleButtonGroup
                   value={formData.status || 'Active'}
