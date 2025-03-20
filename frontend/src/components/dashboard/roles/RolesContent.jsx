@@ -14,7 +14,8 @@ import {
   TextField,
   Grid
 } from '@mui/material';
-import { MaterialReactTable } from 'material-react-table';
+// import { MaterialReactTable } from 'material-react-table';
+import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
 
 
 import AddIcon from '@mui/icons-material/Add';
@@ -413,6 +414,71 @@ const RolesContent = () => {
     return null;
   };
 
+  // Create the table instance using the hook
+  const table = useMaterialReactTable({
+    columns,
+    data: roles || [],
+    state: { isLoading },
+    enableColumnFilters: true,
+    enableColumnOrdering: true,
+    enableSorting: true,
+    enableRowSelection: true,
+    enableRowActions: true,
+    positionActionsColumn: "last",
+    enablePagination: true,
+    initialState: { 
+      pagination: { 
+        pageSize: 5,
+        pageIndex: 0
+      } 
+    },
+    paginationDisplayMode: "pages",
+    muiPaginationProps: {
+      color: 'primary',
+      shape: 'rounded',
+      size: 'large',
+      showRowsPerPage: false,
+      variant: 'outlined',
+      showFirstButton: true, 
+      showLastButton: true, 
+      sx: {
+        '& .MuiPaginationItem-root': {
+          fontSize: '2.4rem', // Larger font size for pagination items
+          // margin: '16px',
+        },
+        '& .MuiSvgIcon-root': {
+          fontSize: '4rem', // Larger icons for first/last/next/prev buttons
+        }
+      }
+    },
+    renderRowActions: ({ row }) => (
+      <Box sx={{ display: 'flex', gap: '2px' }}>
+        <Tooltip title="Edit">
+          <IconButton 
+            onClick={() => handleEdit(row)}
+            sx={{ fontSize: '2rem' }}>
+            <EditIcon fontSize="inherit"/>
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Delete">
+          <IconButton 
+            color="error" 
+            onClick={() => handleDelete(row)}
+            sx={{ fontSize: '2rem' }}>
+            <DeleteIcon fontSize="inherit"/>
+          </IconButton>
+        </Tooltip>
+      </Box>
+    ),
+    muiTableHeadCellProps: {
+      sx: {
+        fontSize: '1.4rem',
+        fontWeight: 'bold',
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.04)'
+      }
+    }
+  });
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -434,43 +500,8 @@ const RolesContent = () => {
         </Button>
       </Box>
       
-      <MaterialReactTable
-        columns={columns}
-        data={roles || []}
-        state={{ isLoading }}
-        enableColumnFilters
-        enableColumnOrdering
-        enableSorting
-        enableRowSelection
-        enableRowActions
-        positionActionsColumn="last"
-        renderRowActions={({ row }) => (
-          <Box sx={{ display: 'flex', gap: '2px' }}>
-            <Tooltip title="Edit">
-              <IconButton 
-                onClick={() => handleEdit(row)}
-                sx={{ fontSize: '2rem' }}>
-                <EditIcon fontSize="inherit"/>
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete">
-              <IconButton 
-                color="error" 
-                onClick={() => handleDelete(row)}
-                sx={{ fontSize: '2rem' }}>
-                <DeleteIcon fontSize="inherit"/>
-              </IconButton>
-            </Tooltip>
-          </Box>
-        )}     
-        muiTableHeadCellProps={{
-          sx: {
-            fontSize: '1.4rem', // Larger header font
-            fontWeight: 'bold',
-            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.04)'
-          }
-        }}
-      />
+      {/* Use the table instance with the new API */}
+      <MaterialReactTable table={table} />
 
       {/* Modal */}
       <Dialog 

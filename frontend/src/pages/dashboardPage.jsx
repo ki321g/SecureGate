@@ -4,7 +4,8 @@ import {
         Box, 
         Toolbar, 
         CssBaseline, 
-        Typography
+        Typography,
+        GlobalStyles
        } from '@mui/material';
 
 // Custom Components
@@ -67,40 +68,52 @@ const DashboardPage = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex' }}> {/* This MUST be 'flex' */}
-      <CssBaseline />
-      <HeaderComponent drawerWidth={drawerWidth} handleDrawerToggle={handleDrawerToggle} />
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }} // Correct width and flexShrink
-        aria-label="mailbox folders"
-      >
-        <SidebarComponent
-          drawerWidth={drawerWidth}
-          mobileOpen={mobileOpen}
-          handleDrawerToggle={handleDrawerToggle}
-          onSelectItem={handleSelectItem}
-        />
-      </Box>
-      <Box
-        component="main"
-        // sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
-        sx={{ 
-          flexGrow: 1, 
-          p: 15, 
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'stretch',
-          justifyContent: 'flex-start', // Align content to the top
-          height: '100vh', // Take full viewport height
-          overflow: 'auto' // Add scrolling if content is too tall
+    <>
+      <GlobalStyles
+        styles={{
+          'body': {
+            overflowY: 'hidden',
+          },
+          '*::-webkit-scrollbar-vertical': {
+            display: 'none',
+          },
         }}
-      >
-        {/* <Toolbar /> */}
-        <SidebarContent selectedItem={selectedItem} />
+      />
+      <Box sx={{ display: 'flex' }}> {/* This MUST be 'flex' */}
+        <CssBaseline />
+        <HeaderComponent drawerWidth={drawerWidth} handleDrawerToggle={handleDrawerToggle} />
+        <Box
+          component="nav"
+          sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }} // Correct width and flexShrink
+          aria-label="mailbox folders"
+        >
+          <SidebarComponent
+            drawerWidth={drawerWidth}
+            mobileOpen={mobileOpen}
+            handleDrawerToggle={handleDrawerToggle}
+            onSelectItem={handleSelectItem}
+          />
+        </Box>
+        <Box
+          component="main"
+          // sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
+          sx={{ 
+            flexGrow: 1, 
+            p: 15, 
+            width: { sm: `calc(100% - ${drawerWidth}px)` },
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'stretch',
+            justifyContent: 'flex-start', // Align content to the top
+            height: '100vh', // Take full viewport height
+            overflow: 'auto' // Add scrolling if content is too tall
+          }}
+        >
+          {/* <Toolbar /> */}
+          <SidebarContent selectedItem={selectedItem}/>
+        </Box>
       </Box>
-    </Box>
+    </>
   );
 };
 

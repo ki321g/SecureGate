@@ -1,8 +1,884 @@
-import React from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Typography from '@mui/material/Typography';
+import { 
+  Box, 
+  Button, 
+  IconButton, 
+  Tooltip,
+  useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText,
+  TextField,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  ToggleButtonGroup, 
+  ToggleButton
+} from '@mui/material';
+// import { MaterialReactTable } from 'material-react-table';
+import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
 
-function UsersContent() {
-  return <Typography variant="h6">Users Content</Typography>;
+
+
+import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { format } from 'date-fns';
+
+// Contexts
+import { useData } from '../../../contexts/dataContext';
+
+// API
+import { usersApi, rolesApi, devicesApi, roleToDeviceApi } from '../../../api/supabase/supabaseApi';
+
+const UsersContent = () => {
+  const theme = useTheme();
+	const { users, setUsers } = useData();
+  const { roles, setRoles } = useData();
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Modal State  
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    mode: null, // 'add', 'edit' or 'delete'
+    selectedUser: null,
+    formData: {
+      first_name: '',
+      last_name: '',
+      email: '',
+      password: '',
+      phone_number: '',
+      role_id: '',
+      card_id: '',
+      user_picture: null,
+      status: '',
+    }
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchUserData = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await usersApi.getAll();
+        
+        if (error) throw error;
+        
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setUsers(data);
+          console.log('USERS:', data);
+        }
+      } catch (error) {
+        console.error('Error fetching USERS data:', error.message);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    fetchUserData();
+    
+    // Cleanup function to prevent state updates after unmounting
+    return () => {
+      isMounted = false;
+    };
+  }, [setUsers]);
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const { data, error } = await rolesApi.getAll();
+        if (error) throw error;
+        setRoles(data || []);
+      } catch (error) {
+        console.error('Error fetching roles:', error.message);
+      }
+    };
+    
+    fetchRoles();
+  }, [setRoles]);
+
+  // Define columns for the table
+  const columns = useMemo(
+    () => [
+      {
+        accessorKey: 'uid',
+        header: 'UID',
+        enableClickToCopy: true,
+        size: 50,
+        Cell: ({ cell }) => {
+          const fullId = cell.getValue();
+          // Display 15 characters followed by ...
+          const truncatedId = fullId ? `${fullId.substring(0, 10)}...` : '';
+          
+          return (
+            <Tooltip title={fullId}>
+              <Typography sx={{ fontSize: '1.2rem' }}>
+                {truncatedId}
+              </Typography>
+            </Tooltip>
+          );
+        },
+      },
+      {
+        accessorKey: 'first_name',
+        header: 'FName',
+        enableClickToCopy: true,
+        size: 30,
+        Cell: ({ cell }) => (
+          <Typography sx={{ fontSize: '1.2rem' }}>
+            {cell.getValue()}
+          </Typography>
+        ),
+      },
+      {
+        accessorKey: 'last_name',
+        header: 'LName',
+        enableClickToCopy: true,
+        size: 30,
+        Cell: ({ cell }) => (
+          <Typography sx={{ fontSize: '1.2rem' }}>
+            {cell.getValue()}
+          </Typography>
+        ),
+      },
+      {
+        accessorKey: 'email',
+        header: 'Email',
+        enableClickToCopy: true,
+        size: 30,
+        Cell: ({ cell }) => (
+          <Typography sx={{ fontSize: '1.2rem' }}>
+            {cell.getValue()}
+          </Typography>
+        ),
+      },
+      {
+        accessorKey: 'password',
+        header: 'Password',
+        enableClickToCopy: true,
+        size: 30,
+        Cell: ({ cell }) => (
+          <Typography sx={{ fontSize: '1.2rem' }}>
+            {cell.getValue()}
+          </Typography>
+        ),
+      },
+      {
+        accessorKey: 'phone_number',
+        header: 'Phone#',
+        enableClickToCopy: true,
+        size: 30,
+        Cell: ({ cell }) => (
+          <Typography sx={{ fontSize: '1.2rem' }}>
+            {cell.getValue()}
+          </Typography>
+        ),
+      },
+      {
+        accessorKey: 'role_id',
+        header: 'Role ID',
+        enableClickToCopy: true,
+        size: 50,
+        Cell: ({ cell }) => {
+          const fullId = cell.getValue();
+          // Display 15 characters followed by ...
+          const truncatedId = fullId ? `${fullId.substring(0, 10)}...` : '';
+          
+          return (
+            <Tooltip title={fullId}>
+              <Typography sx={{ fontSize: '1.2rem' }}>
+                {truncatedId}
+              </Typography>
+            </Tooltip>
+          );
+        },
+      },
+      {
+        accessorKey: 'card_id',
+        header: 'Card ID',
+        enableClickToCopy: true,
+        size: 30,
+        Cell: ({ cell }) => (
+          <Typography sx={{ fontSize: '1.2rem' }}>
+            {cell.getValue()}
+          </Typography>
+        ),
+      },
+      // {
+      //   accessorKey: 'user_picture',
+      //   header: 'User Picture',
+      //   enableClickToCopy: true,
+      //   size: 50,
+      //   Cell: ({ cell }) => {
+      //     const fullId = cell.getValue();
+      //     // Display 15 characters followed by ...
+      //     const truncatedId = fullId ? `${fullId.substring(0, 10)}...` : '';
+          
+      //     return (
+      //       <Tooltip title={fullId}>
+      //         <Typography sx={{ fontSize: '1.2rem' }}>
+      //           {truncatedId}
+      //         </Typography>
+      //       </Tooltip>
+      //     );
+      //   },
+      // },
+      {
+        accessorKey: 'user_picture',
+        header: 'Picture',
+        enableClickToCopy: false, // Changed to false since copying an image base64 is less useful
+        size: 80, // Increased size to accommodate the image
+        Cell: ({ cell }) => {
+          const base64Image = cell.getValue();
+          const defaultImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwMCI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgM2MyLjY3IDAgOCAyLjY3IDggOHYxYzAgMS4xLS45IDItMiAyaC0xMmMtMS4xIDAtMi0uOS0yLTJ2LTFjMC01LjMzIDUuMzMtOCA4LTh6bTAgMTNjLTIuMjEgMC00LTEuNzktNC00aDhjMCAyLjIxLTEuNzkgNC00IDR6Ii8+PC9zdmc+'; // Simple user icon in SVG format
+          
+          return (
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                justifyContent: 'center',
+                // alignItems: 'center',
+                height: '70px',
+                width: '70px',
+                margin: '0 auto'
+              }}
+            >
+              <img 
+                src={base64Image || defaultImage} 
+                alt="User"
+                style={{ 
+                  maxHeight: '100%', 
+                  maxWidth: '100%', 
+                  borderRadius: '10%',
+                  objectFit: 'cover',
+                  border: '1px solid #ddd'
+                }}
+                onError={(e) => {
+                  e.target.onerror = null; // Prevent infinite loop
+                  e.target.src = defaultImage;
+                }}
+              />
+            </Box>
+          );
+        },
+      },
+      {
+        accessorKey: 'status',
+        header: 'Status',
+        size: 80,
+        Cell: ({ cell }) => (
+          <Box
+            component="span"
+            sx={{
+              backgroundColor: cell.getValue() === 'Active' 
+                ? 'success.light' 
+                : cell.getValue() === 'Disabled'
+                  ? 'warning.light'  // Yellow color for Disabled
+                  : 'error.light',   // Red color for other values (like 'InActive')
+              borderRadius: '4px',
+              color: '#fff',
+              maxWidth: '9ch',
+              p: '0.35rem 0.6rem', // Slightly larger padding
+              fontSize: '1.4rem', // Larger font size
+            }}
+          >
+            {cell.getValue()}
+          </Box>
+        ),
+      },
+    ],
+    []
+  );
+  
+  // Handle add
+  const handleAdd = () => {
+    setModalState({
+      isOpen: true,
+      mode: 'add',
+      selectedUser: null,
+      formData: {
+        first_name: '',
+        last_name: '',
+        email: '',
+        password: '',
+        phone_number: '',
+        role_id: '',
+        card_id: '',
+        user_picture: null,
+        status: 'Active',
+      }
+    });
+  };
+
+  // Handle edit
+  const handleEdit = (row) => {
+    setModalState({
+      isOpen: true,
+      mode: 'edit',
+      selectedUser: row.original,
+      formData: {
+        first_name: row.original.first_name,
+        last_name: row.original.last_name,
+        email: row.original.email,
+        password: row.original.password,
+        phone_number: row.original.phone_number,
+        role_id: row.original.role_id,
+        card_id: row.original.card_id,
+        user_picture: row.original.user_picture,
+        status: row.original.status,
+      }
+    });
+  };
+
+  // Handle delete
+  const handleDelete = (row) => {
+    setModalState({
+      isOpen: true,
+      mode: 'delete',
+      selectedUser: row.original,
+      formData: {} // Not needed for delete
+    });
+  };
+
+  // Close modal
+  const handleCloseModal = () => {
+    setModalState(prev => ({
+      ...prev,
+      isOpen: false
+    }));
+  };
+
+  // Handle input change for edit form
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setModalState(prev => ({
+      ...prev,
+      formData: {
+        ...prev.formData,
+        [name]: value
+      }
+    }));
+  };
+
+  // Save changes for edit
+  const handleSaveChanges = async () => {
+    try {
+      const { error } = await usersApi.update(
+        modalState.selectedUser.uid, 
+        modalState.formData
+      );
+      
+      if (error) throw error;
+    
+      const updatedUsers = users.map(user => 
+        user.uid === modalState.selectedUser.uid 
+          ? { ...user, ...modalState.formData } 
+          : user
+      );
+      
+      setUsers(updatedUsers);
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error updating user:', error.message);
+    }
+  };
+
+  // Create new role
+  const handleCreate = async () => {
+    try {
+      const { data, error } = await usersApi.create(modalState.formData);
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        // Add the new role to the roles array
+        setUsers([...users, data[0]]);
+        handleCloseModal();
+      } else {
+        throw new Error('No data returned from create operation');
+      }
+    } catch (error) {
+      console.error('Error creating user:', error.message);
+    }
+  };
+
+
+  // Confirm and execute delete
+  const handleConfirmDelete = async () => {
+    try {
+      const { error } = await usersApi.delete(modalState.selectedUser.uid);
+      
+      if (error) throw error;
+      
+      const updatedUsers = users.filter(
+        user => user.uid !== modalState.selectedUser.uid
+      );
+      setUsers(updatedUsers);
+      
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error deleting user:', error.message);
+    }
+  };
+
+   
+  // Render modal content based on mode
+  const renderModalContent = () => {
+    const { mode, selectedUser, formData } = modalState;
+
+    if (mode === 'add') {
+      return (
+        <>
+          <DialogTitle sx={{ fontSize: '1.8rem' }}>
+            Add New User
+          </DialogTitle>
+          <DialogContent>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={6}>
+                <TextField
+                  fullWidth
+                  label="First Name"
+                  name="first_name"
+                  value={formData.first_name}
+                  onChange={handleInputChange}
+                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  fullWidth
+                  label="Last Name"
+                  name="last_name"
+                  value={formData.last_name}
+                  onChange={handleInputChange}
+                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  fullWidth
+                  label="Password"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  fullWidth
+                  label="Phone Number"
+                  name="phone_number"
+                  value={formData.phone_number}
+                  onChange={handleInputChange}
+                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <FormControl fullWidth>
+                  <InputLabel id="role-select-label" sx={{ fontSize: '1.4rem' }}>Role</InputLabel>
+                  <Select
+                    labelId="role-select-label"
+                    name="role_id"
+                    value={formData.role_id}
+                    onChange={handleInputChange}
+                    label="Role"
+                    sx={{ '& .MuiSelect-select': { fontSize: '1.4rem' } }}
+                  >
+                    {roles.map((role) => (
+                      <MenuItem key={role.role_id} value={role.role_id}>
+                        {role.role_name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  fullWidth
+                  label="Card UID"
+                  name="card_id"
+                  value={formData.card_id}
+                  onChange={handleInputChange}
+                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
+                />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Button 
+              onClick={handleCloseModal} 
+              sx={{ fontSize: '1.2rem' }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreate} 
+              variant="contained" 
+              sx={{ fontSize: '1.2rem' }}
+            >
+              Create User
+            </Button>
+          </DialogActions>
+        </>
+      );
+    }
+
+    if (mode === 'edit' && selectedUser) {
+      return (
+        <>
+          <DialogTitle sx={{ fontSize: '1.8rem' }}>
+            Edit User
+          </DialogTitle>
+          <DialogContent>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="User ID"
+                  value={selectedUser.uid}
+                  disabled
+                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  fullWidth
+                  label="First Name"
+                  name="first_name"
+                  value={formData.first_name}
+                  onChange={handleInputChange}
+                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  fullWidth
+                  label="Last Name"
+                  name="last_name"
+                  value={formData.last_name}
+                  onChange={handleInputChange}
+                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  fullWidth
+                  label="Password"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  fullWidth
+                  label="Phone Number"
+                  name="phone_number"
+                  value={formData.phone_number}
+                  onChange={handleInputChange}
+                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <FormControl fullWidth>
+                  <InputLabel id="role-select-edit-label" sx={{ fontSize: '1.4rem' }}>Role</InputLabel>
+                  <Select
+                    labelId="role-select-edit-label"
+                    name="role_id"
+                    value={formData.role_id}
+                    onChange={handleInputChange}
+                    label="Role"
+                    sx={{ '& .MuiSelect-select': { fontSize: '1.4rem' } }}
+                  >
+                    {roles.map((role) => (
+                      <MenuItem key={role.role_id} value={role.role_id}>
+                        {role.role_name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  fullWidth
+                  label="Card UID"
+                  name="card_id"
+                  value={formData.card_id}
+                  onChange={handleInputChange}
+                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <ToggleButtonGroup
+                  value={formData.status || 'Active'}
+                  exclusive
+                  onChange={(e, newStatus) => {
+                    // Only update if a button is selected
+                    if (newStatus !== null) {
+                      setModalState(prev => ({
+                        ...prev,
+                        formData: {
+                          ...prev.formData,
+                          status: newStatus
+                        }
+                      }));
+                    }
+                  }}
+                  aria-label="user status"
+                  fullWidth
+                >
+                  <ToggleButton 
+                    value="Active" 
+                    aria-label="active"
+                    sx={{ 
+                      fontSize: '1.2rem',
+                      '&.Mui-selected': { 
+                        backgroundColor: 'success.light', 
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: 'success.main',
+                        }
+                      }
+                    }}
+                  >
+                    Active
+                  </ToggleButton>
+                  <ToggleButton 
+                    value="InActive" 
+                    aria-label="inactive"
+                    sx={{ 
+                      fontSize: '1.2rem',
+                      '&.Mui-selected': { 
+                        backgroundColor: 'error.light', 
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: 'error.main',
+                        }
+                      }
+                    }}
+                  >
+                    InActive
+                  </ToggleButton>
+                  <ToggleButton 
+                    value="Disabled" 
+                    aria-label="disabled"
+                    sx={{ 
+                      fontSize: '1.2rem',
+                      '&.Mui-selected': { 
+                        backgroundColor: 'warning.light', 
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: 'warning.main',
+                        }
+                      }
+                    }}
+                  >
+                    Disabled
+                  </ToggleButton>
+                </ToggleButtonGroup>
+              </Grid>             
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Button 
+              onClick={handleCloseModal} 
+              sx={{ fontSize: '1.2rem' }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveChanges} 
+              variant="contained" 
+              sx={{ fontSize: '1.2rem' }}
+            >
+              Save Changes
+            </Button>
+          </DialogActions>
+        </>
+      );
+    }
+    
+    
+    // Delete mode remains the same
+    if (mode === 'delete' && selectedUser) {
+      return (
+        <>
+          <DialogTitle sx={{ fontSize: '1.8rem' }}>
+            Confirm Delete
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText sx={{ fontSize: '1.4rem' }}>
+              Are you sure you want to delete the user "{selectedUser.first_name} {selectedUser.last_name}"? 
+              This action cannot be undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button 
+              onClick={handleCloseModal} 
+              sx={{ fontSize: '1.2rem' }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmDelete} 
+              color="error" 
+              variant="contained" 
+              sx={{ fontSize: '1.2rem' }}
+            >
+              Delete
+            </Button>
+          </DialogActions>
+        </>
+      );
+    }
+    
+    return null;
+  };
+
+  // Create the table instance using the hook
+  const table = useMaterialReactTable({
+    columns,
+    data: users || [],
+    state: { isLoading },
+    enableColumnFilters: true,
+    enableColumnOrdering: true,
+    enableSorting: true,
+    enableRowSelection: true,
+    enableRowActions: true,
+    positionActionsColumn: "last",
+    enablePagination: true,
+    initialState: { 
+      pagination: { 
+        pageSize: 5,
+        pageIndex: 0
+      },
+      columnVisibility: {
+        // Set to false for columns you want to hide
+        uid: false,
+        password: false,
+        email: false,
+        phone_number: false,
+      } 
+    },
+    paginationDisplayMode: "pages",
+    muiPaginationProps: {
+      color: 'primary',
+      shape: 'rounded',
+      size: 'large',
+      showRowsPerPage: false,
+      variant: 'outlined',
+      showFirstButton: true, 
+      showLastButton: true, 
+      sx: {
+        '& .MuiPaginationItem-root': {
+          fontSize: '2.4rem', // Larger font size for pagination items
+          // margin: '16px',
+        },
+        '& .MuiSvgIcon-root': {
+          fontSize: '4rem', // Larger icons for first/last/next/prev buttons
+        }
+      }
+    },
+    renderRowActions: ({ row }) => (
+      <Box sx={{ display: 'flex', gap: '2px' }}>
+        <Tooltip title="Edit">
+          <IconButton 
+            onClick={() => handleEdit(row)}
+            sx={{ fontSize: '2rem' }}>
+            <EditIcon fontSize="inherit"/>
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Delete">
+          <IconButton 
+            color="error" 
+            onClick={() => handleDelete(row)}
+            sx={{ fontSize: '2rem' }}>
+            <DeleteIcon fontSize="inherit"/>
+          </IconButton>
+        </Tooltip>
+      </Box>
+    ),
+    muiTableHeadCellProps: {
+      sx: {
+        fontSize: '1.4rem',
+        fontWeight: 'bold',
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.04)'
+      }
+    }
+  });
+  
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography 
+          variant="h4" 
+          component="h1" 
+          gutterBottom
+          sx={{ fontSize: '2rem' }}
+        >
+          Users Management
+        </Typography>
+
+        <Button 
+          variant="contained" 
+          startIcon={<AddIcon />}
+          onClick={handleAdd}
+          sx={{ fontSize: '1.1rem', py: 1, px: 2 }}
+        >
+          Add User
+        </Button>
+      </Box>
+      
+      {/* Use the table instance with the new API */}
+      <MaterialReactTable table={table} />
+      
+      {/* Modal */}
+      <Dialog 
+        open={modalState.isOpen} 
+        onClose={handleCloseModal}
+        fullWidth
+        maxWidth="md"
+      >
+        {renderModalContent()}
+      </Dialog>
+    </Box>
+  );
 }
 
 export default UsersContent;
