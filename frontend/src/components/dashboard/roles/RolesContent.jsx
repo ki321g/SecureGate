@@ -82,8 +82,9 @@ const RolesContent = () => {
       {
         accessorKey: 'role_id',
         header: 'UID',
+        enableColumnActions: false,
         enableClickToCopy: true,
-        size: 240,
+        size: 200,
         Cell: ({ cell }) => {
           const fullId = cell.getValue();
           // Display 18 characters followed by ...
@@ -102,7 +103,7 @@ const RolesContent = () => {
         accessorKey: 'role_name',
         header: 'Name',
         enableClickToCopy: true,
-        size: 100,
+        size: 200,
         Cell: ({ cell }) => (
           <Typography sx={{ fontSize: '1.2rem' }}>
             {cell.getValue()}
@@ -113,7 +114,7 @@ const RolesContent = () => {
         accessorKey: 'description',
         header: 'Description',
         enableClickToCopy: true,
-        size: 360,
+        size: 450,
         Cell: ({ cell }) => (
           <Typography sx={{ fontSize: '1.2rem' }}>
             {cell.getValue()}
@@ -123,8 +124,9 @@ const RolesContent = () => {
       {
         accessorKey: 'created_at',
         header: 'Create Date',
+        enableColumnActions: false,
         enableClickToCopy: true,
-        size: 180,
+        size: 230,
         Cell: ({ cell }) => {
           const date = new Date(cell.getValue());
           return (
@@ -197,7 +199,6 @@ const RolesContent = () => {
   // Save changes for edit
   const handleSaveChanges = async () => {
     try {
-      alert(modalState.selectedRole.role_id + " " + modalState.formData.role_name + " " + modalState.formData.description);
       const { error } = await rolesApi.update(
         modalState.selectedRole.role_id, 
         modalState.formData
@@ -420,16 +421,23 @@ const RolesContent = () => {
     columns,
     data: roles || [],
     state: { isLoading },
+    enableSorting: true,
+
+    enableColumnActions: true, 
     enableColumnFilters: true,
     enableColumnOrdering: true,
-    enableSorting: true,
+
+    enableColumnFilterModes: true,
+    enableColumnDragging: false,
+    enableSortingRemoval: true,
+
     enableRowSelection: true,
     enableRowActions: true,
     positionActionsColumn: "last",
     enablePagination: true,
     initialState: { 
       pagination: { 
-        pageSize: 5,
+        pageSize: 8,
         pageIndex: 0
       } 
     },
@@ -482,7 +490,7 @@ const RolesContent = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography 
           variant="h4" 
           component="h1" 
@@ -491,15 +499,22 @@ const RolesContent = () => {
         >
           Roles Management
         </Typography>
-        <Button 
-          variant="contained" 
-          startIcon={<AddIcon />}
-          onClick={handleAdd}
-          sx={{ fontSize: '1.1rem', py: 1, px: 2 }} // Larger button
-        >
-          Add Role
-        </Button>
+        
+        {/* Group buttons together on the right */}
+        <Box sx={{ display: 'flex', gap: 2 }}>
+		  {/* Add more Buttons here */}
+          <Button 
+            variant="contained" 
+            size="large"
+            startIcon={<AddIcon />}
+            onClick={handleAdd}
+            sx={{ fontSize: '1.6rem', py: 1, px: 2 }} // Larger button
+          >
+            Add Device
+          </Button>
+        </Box>
       </Box>
+
       
       {/* Use the table instance with the new API */}
       <MaterialReactTable table={table} />

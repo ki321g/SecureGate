@@ -121,6 +121,7 @@ const DeviceSelectionComponent = () => {
   const [error, setError] = useState(null);
   const [deviceStatus, setDeviceStatus] = useState({});
   const [selectedDevices, setSelectedDevices] = useState([]);
+
   
   // Get devices from DataContext
   const { devices, setDevices } = useData();

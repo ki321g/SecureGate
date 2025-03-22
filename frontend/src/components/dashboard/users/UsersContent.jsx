@@ -39,6 +39,9 @@ import { usersApi, rolesApi, devicesApi, roleToDeviceApi } from '../../../api/su
 const API_KEY = import.meta.env.VITE_BACKEND_API_KEY;
 const API_BASE_URL = import.meta.env.VITE_BACKEND_API_BASE_URL;
 
+// Import default user image
+import { defaultUserImage } from './defaultUserImage';
+
 const UsersContent = () => {
   const theme = useTheme();
 	const { users, setUsers } = useData();
@@ -267,8 +270,8 @@ const UsersContent = () => {
               sx={{ 
                 display: 'flex', 
                 justifyContent: 'center',
-                height: '70px',
-                width: '70px',
+                height: '60px',
+                width: '60px',
                 margin: '0 auto',
                 cursor: 'pointer' // Add cursor pointer to indicate it's clickable
               }}
@@ -291,7 +294,7 @@ const UsersContent = () => {
                 }}
                 onError={(e) => {
                   e.target.onerror = null;
-                  e.target.src = defaultImage;
+                  e.target.src = defaultUserImage;
                 }}
               />
             </Box>
@@ -301,6 +304,7 @@ const UsersContent = () => {
       {
         accessorKey: 'status',
         header: 'Status',
+        enableColumnActions: false,
         size: 80,
         Cell: ({ cell }) => (
           <Box
@@ -430,7 +434,7 @@ const UsersContent = () => {
       const formDataToSubmit = { ...modalState.formData };
       
       if (!formDataToSubmit.user_picture) {
-        formDataToSubmit.user_picture = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwMCI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgM2MyLjY3IDAgOCAyLjY3IDggOHYxYzAgMS4xLS45IDItMiAyaC0xMmMtMS4xIDAtMi0uOS0yLTJ2LTFjMC01LjMzIDUuMzMtOCA4LTh6bTAgMTNjLTIuMjEgMC00LTEuNzktNC00aDhjMCAyLjIxLTEuNzkgNC00IDR6Ii8+PC9zdmc+';
+        formDataToSubmit.user_picture = defaultUserImage;
       }
       
       const { data, error } = await usersApi.create(formDataToSubmit);
@@ -925,17 +929,24 @@ const UsersContent = () => {
   const table = useMaterialReactTable({
     columns,
     data: users || [],
-    state: { isLoading },
+    state: { isLoading }, 
+    enableSorting: true,
+    
+    enableColumnActions: true, 
     enableColumnFilters: true,
     enableColumnOrdering: true,
-    enableSorting: true,
+
+    enableColumnFilterModes: true,
+    enableColumnDragging: false,
+    enableSortingRemoval: true,
+
     enableRowSelection: true,
     enableRowActions: true,
     positionActionsColumn: "last",
     enablePagination: true,
     initialState: { 
       pagination: { 
-        pageSize: 5,
+        pageSize: 6,
         pageIndex: 0
       },
       columnVisibility: {
@@ -996,26 +1007,31 @@ const UsersContent = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography 
           variant="h4" 
           component="h1" 
           gutterBottom
-          sx={{ fontSize: '2rem' }}
+          sx={{ fontSize: '2rem' }} // Larger heading
         >
           Users Management
         </Typography>
-
-        <Button 
-          variant="contained" 
-          startIcon={<AddIcon />}
-          onClick={handleAdd}
-          sx={{ fontSize: '1.1rem', py: 1, px: 2 }}
-        >
-          Add User
-        </Button>
+        
+        {/* Group buttons together on the right */}
+        <Box sx={{ display: 'flex', gap: 2 }}>
+		  {/* Add more Buttons here */}
+          <Button 
+            variant="contained" 
+            size="large"
+            startIcon={<AddIcon />}
+            onClick={handleAdd}
+            sx={{ fontSize: '1.6rem', py: 1, px: 2 }} // Larger button
+          >
+            Add Device
+          </Button>
+        </Box>
       </Box>
-      
+
       {/* Use the table instance with the new API */}
       <MaterialReactTable table={table} />
       
