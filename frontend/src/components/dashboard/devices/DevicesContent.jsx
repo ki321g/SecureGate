@@ -70,9 +70,10 @@ const DevicesContent = () => {
   useEffect(() => {
     let isMounted = true;
 
-    const fetchDevicesData = async () => {
+    const fetchAllData = async () => {
       setIsLoading(true);
       try {
+        // First fetch the devices data
         const { data, error } = await devicesApi.getAll();
         
         if (error) throw error;
@@ -81,9 +82,43 @@ const DevicesContent = () => {
         if (isMounted) {
           setDevices(data);
           console.log('DEVICES:', data);
+          
+          // If we have devices, immediately fetch their status
+          if (data && data.length > 0) {
+            const newStatus = { ...deviceStatus };
+            
+            await Promise.all(
+              data.map(async (device) => {
+                try {
+                  const response = await axios.get(`${API_BASE_URL}/tinytuya/status/${device.deviceid}`, {
+                    headers: {
+                      'X-API-Key': API_KEY,
+                      'Content-Type': 'application/json'
+                    }
+                  });
+
+                  const statusData = response.data;
+                  
+                  if (statusData && statusData.dps && statusData.dps["1"] !== undefined) {
+                    // Status is a boolean in dps.1
+                    newStatus[device.deviceid] = statusData.dps["1"] ? 'ON' : 'OFF';
+                  } else {
+                    newStatus[device.deviceid] = 'Unknown';
+                  }
+                } catch (err) {
+                  console.error(err);
+                  newStatus[device.deviceid] = 'ERROR';
+                }
+              })
+            );
+            
+            if (isMounted) {
+              setDeviceStatus(newStatus);
+            }
+          }
         }
       } catch (error) {
-        console.error('Error fetching DEVICES data:', error.message);
+        console.error('Error fetching data:', error.message);
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -91,22 +126,16 @@ const DevicesContent = () => {
       }
     };
     
-    fetchDevicesData();
+    fetchAllData();
     
     // Cleanup function to prevent state updates after unmounting
     return () => {
       isMounted = false;
     };
-  }, [setDevices]);
+  }, [setDevices]); // Only depend on setDevices
 
-  // Add a separate useEffect for fetching device status
-  useEffect(() => {
-    if (devices.length > 0) {
-      fetchDeviceStatus();
-    }
-  }, [devices]);
 
-  // Add useEffect to fetch roles
+  // useEffect to fetch roles
   useEffect(() => {
     const fetchRoles = async () => {
       try {
@@ -748,11 +777,17 @@ const DevicesContent = () => {
         pageIndex: 0
       },
       columnVisibility: {
-        // Set to false for columns you want to hide        
+        // Set to false for columns you want to hide
         device_id: false,
         description: false,
         created_at: false
-      } 
+      },
+      sorting: [
+        {
+          id: 'device_name',
+          asc: true // Sort by newest first
+        }
+      ] 
     },
     paginationDisplayMode: "pages",
     muiPaginationProps: {
@@ -897,7 +932,7 @@ const DevicesContent = () => {
         {renderModalContent()}
       </Dialog>
 
-      {/* Role Assignment Modal */}
+      {/* Role Modal */}
       <Dialog
         open={roleModalOpen}
         onClose={() => setRoleModalOpen(false)}
@@ -909,45 +944,75 @@ const DevicesContent = () => {
         </DialogTitle>
         <DialogContent>
           {selectedDeviceForRoles && (
-            <List>
-              {roles
-                .filter(role => {
-                  const roleName = role.role_name.toLowerCase();
-                  return roleName !== 'admin' && roleName !== 'cleaner';
-                })
-                .map((role) => {
-                  const isAssigned = deviceRoles[selectedDeviceForRoles.device_id]?.includes(role.role_id);
-                  
-                  return (
-                    <ListItem key={role.role_id}>
-                      <ListItemText 
-                        primary={role.role_name} 
-                        secondary={role.description}
-                        primaryTypographyProps={{ fontSize: '1.4rem' }}
-                        secondaryTypographyProps={{ fontSize: '1.2rem' }}
-                      />
-                      <ListItemSecondaryAction>
-                        <Switch
-                          edge="end"
-                          checked={isAssigned}
-                          onChange={(e) => handleRoleAssignment(
-                            selectedDeviceForRoles.device_id, 
-                            role.role_id, 
-                            e.target.checked
-                          )}
-                          color="primary"
+            <Box sx={{ 
+              height: '380px', // Fixed height to accommodate about 4 roles
+              overflow: 'auto'  // Enable scrolling
+            }}>
+              <List>
+                {roles
+                  .filter(role => {
+                    const roleName = role.role_name.toLowerCase();
+                    return roleName !== 'admin' && roleName !== 'cleaner';
+                  })
+                  .map((role) => {
+                    const isAssigned = deviceRoles[selectedDeviceForRoles.device_id]?.includes(role.role_id);
+                    
+                    return (
+                      <ListItem 
+                        key={role.role_id} 
+                      >
+                        <ListItemText 
+                          primary={role.role_name} 
+                          secondary={role.description}
+                          primaryTypographyProps={{ fontSize: '1.4rem' }}
+                          secondaryTypographyProps={{ fontSize: '1.2rem' }}
                         />
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                  );
-                })
-              }
-              {roles.length === 0 && (
-                <Typography sx={{ p: 2, textAlign: 'center', color: 'text.secondary', fontSize: '1.4rem' }}>
-                  No roles available. Please create roles first.
-                </Typography>
-              )}
-            </List>
+                        <ListItemSecondaryAction sx={{ width: '100px' }}>
+                          <Switch 
+                            edge="end"
+                            // size="medium"
+                            checked={isAssigned}
+                            onChange={(e) => handleRoleAssignment(
+                              selectedDeviceForRoles.device_id, 
+                              role.role_id, 
+                              e.target.checked
+                            )}
+                            color="primary"
+                            // GOT the Style for the thumbnail here
+                            // https://codesandbox.io/p/sandbox/customizedswitches-material-demo-forked-4m2t71?file=%2Fdemo.tsx%3A35%2C19-35%2C35
+                            sx={{ 
+                              width: 80,
+                              height: 48,
+                              padding: 1,
+                              "& .MuiSwitch-switchBase": {
+                                margin: 1,
+                                padding: 0,
+                                transform: "translateY(-2px)",
+                                "&.Mui-checked": {
+                                  transform: "translateX(30px) translateY(-2px)",
+                                },
+                              },
+                              "& .MuiSwitch-thumb": {
+                                width: 36,
+                                height: 36,
+                              },
+                              "& .MuiSwitch-track": {
+                                borderRadius: 20 / 2,
+                              }, 
+                            }}
+                          />
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    );
+                  })
+                }
+                {roles.length === 0 && (
+                  <Typography sx={{ p: 2, textAlign: 'center', color: 'text.secondary', fontSize: '1.4rem' }}>
+                    No roles available. Please create roles first.
+                  </Typography>
+                )}
+              </List>
+            </Box>
           )}
         </DialogContent>
         <DialogActions>
@@ -960,6 +1025,8 @@ const DevicesContent = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+
     </Box>
   );
 }

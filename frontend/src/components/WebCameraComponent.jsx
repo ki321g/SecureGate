@@ -146,7 +146,7 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
             
             // Add 1 second delay before setting status
             setTimeout(() => {
-                setStatus({ text: 'DETECTING FACE', color: '#3498db' });                
+                setStatus({ text: 'DETECTING FACE', color: '#3498db' });
                 setFaceDetector(detector);
             }, facialStepDelay); // 1000 milliseconds = 1 second
         };

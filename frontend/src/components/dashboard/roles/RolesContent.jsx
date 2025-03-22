@@ -12,7 +12,12 @@ import {
   DialogActions,
   DialogContentText,
   TextField,
-  Grid
+  Grid,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  Switch
 } from '@mui/material';
 // import { MaterialReactTable } from 'material-react-table';
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
@@ -20,6 +25,8 @@ import { MaterialReactTable, useMaterialReactTable } from 'material-react-table'
 
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
+import PersonIcon from '@mui/icons-material/Person';
+import DevicesIcon from '@mui/icons-material/Devices'; 
 import DeleteIcon from '@mui/icons-material/Delete';
 import { format } from 'date-fns';
 
@@ -30,8 +37,14 @@ import { rolesApi, devicesApi, roleToDeviceApi } from '../../../api/supabase/sup
 
 const RolesContent = () => {
   const theme = useTheme();
-  const { roles, setRoles } = useData();
+  const {roles, setRoles} = useData();
   const [isLoading, setIsLoading] = useState(true);
+  
+  const [devices, setDevices] = useState([]);
+  const [roleDevices, setRoleDevices] = useState({});
+  const [deviceModalOpen, setDeviceModalOpen] = useState(false);
+  const [selectedRoleForDevices, setSelectedRoleForDevices] = useState(null);
+  
   
   // Modal State  
   const [modalState, setModalState] = useState({
@@ -75,6 +88,78 @@ const RolesContent = () => {
       isMounted = false;
     };
   }, [setRoles]);
+
+  //useEffect to fetch devices
+  useEffect(() => {
+    const fetchDevices = async () => {
+      try {
+        const { data, error } = await devicesApi.getAll();
+        if (error) throw error;
+        setDevices(data || []);
+      } catch (error) {
+        console.error('Error fetching devices:', error.message);
+      }
+    };
+    
+    fetchDevices();
+  }, [setDevices]);
+
+  // Function to fetch role devices
+  const fetchRoleDevices = async (roleId) => {
+    try {
+      const { data, error } = await roleToDeviceApi.getDevicesByRole(roleId);
+      if (error) throw error;
+      
+      // Transform the data into a more usable format
+      const deviceIds = data.map(item => item.devices.device_id);
+      return deviceIds;
+    } catch (error) {
+      console.error('Error fetching role devices:', error.message);
+      return [];
+    }
+  };
+
+  // Function to handle device assignment
+  const handleDeviceAssignment = async (roleId, deviceId, isAssigned) => {
+    try {
+      if (isAssigned) {
+        // Assign device to role
+        const { error } = await roleToDeviceApi.assign(roleId, deviceId);
+        if (error) throw error;
+      } else {
+        // Unassign device from role
+        const { error } = await roleToDeviceApi.unassign(roleId, deviceId);
+        if (error) throw error;
+      }
+      
+      // Update the role devices state
+      const updatedDevices = await fetchRoleDevices(roleId);
+      setRoleDevices({
+        ...roleDevices,
+        [roleId]: updatedDevices
+      });
+    } catch (error) {
+      console.error('Error updating device assignment:', error.message);
+    }
+  };
+
+  
+  
+  // Function to open the device assignment modal
+  const handleOpenDeviceModal = async (role) => {
+    setSelectedRoleForDevices(role);
+    
+    // Fetch current device assignments for this role
+    const deviceIds = await fetchRoleDevices(role.role_id);
+    setRoleDevices({
+      ...roleDevices,
+      [role.role_id]: deviceIds
+    });
+    
+    setDeviceModalOpen(true);
+  };
+  
+  
 
   // Define columns for the table
   const columns = useMemo(
@@ -439,7 +524,13 @@ const RolesContent = () => {
       pagination: { 
         pageSize: 8,
         pageIndex: 0
-      } 
+      },
+      sorting: [
+        {
+          id: 'role_name',
+          asc: true // Sort by newest first
+        }
+      ]
     },
     paginationDisplayMode: "pages",
     muiPaginationProps: {
@@ -460,25 +551,77 @@ const RolesContent = () => {
         }
       }
     },
-    renderRowActions: ({ row }) => (
-      <Box sx={{ display: 'flex', gap: '2px' }}>
-        <Tooltip title="Edit">
-          <IconButton 
-            onClick={() => handleEdit(row)}
-            sx={{ fontSize: '2rem' }}>
-            <EditIcon fontSize="inherit"/>
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Delete">
-          <IconButton 
-            color="error" 
-            onClick={() => handleDelete(row)}
-            sx={{ fontSize: '2rem' }}>
-            <DeleteIcon fontSize="inherit"/>
-          </IconButton>
-        </Tooltip>
-      </Box>
-    ),
+    renderRowActions: ({ row }) => {      
+      // Convert to lowercase for comparison
+      const roleName = row.original.role_name.toLowerCase(); 
+      // Check if the role is admin or cleaner
+      const isAdminOrCleaner = roleName === 'admin' || roleName === 'cleaner';
+      
+      return (
+        <Box sx={{ display: 'flex', gap: '2px' }}>
+          <Tooltip title={isAdminOrCleaner ? "Cannot assign devices to Admin or Cleaner roles" : "Assign Devices"}>
+            <span>
+              <IconButton 
+                onClick={() => !isAdminOrCleaner && handleOpenDeviceModal(row.original)}
+                disabled={isAdminOrCleaner}
+                sx={{ 
+                  fontSize: '2rem', 
+                  color: 'primary.main'
+                }}>
+                <DevicesIcon fontSize="inherit"/>
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title={isAdminOrCleaner ? "Cannot Edit Admin or Cleaner roles" : "Edit"}>
+            <span>
+              <IconButton 
+                onClick={() => !isAdminOrCleaner && handleEdit(row)}
+                disabled={isAdminOrCleaner}
+                sx={{ fontSize: '2rem' }}>
+                <EditIcon fontSize="inherit"/>
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title={isAdminOrCleaner ? "Cannot Delete Admin or Cleaner roles" : "Delete"}><span>  
+            <IconButton 
+              color="error" 
+              onClick={() => !isAdminOrCleaner && handleDelete(row)}
+              disabled={isAdminOrCleaner}
+              sx={{ fontSize: '2rem' }}>
+              <DeleteIcon fontSize="inherit"/>
+            </IconButton>
+            </span>
+          </Tooltip>
+        </Box>
+      );
+    },
+    
+    // renderRowActions: ({ row }) => (
+    //   <Box sx={{ display: 'flex', gap: '2px' }}>
+    //   <Tooltip title="Assign Devices">
+    //     <IconButton 
+    //       onClick={() => handleOpenDeviceModal(row.original)}
+    //       sx={{ fontSize: '2rem', color: 'primary.main' }}>
+    //       <DevicesIcon fontSize="inherit"/>
+    //     </IconButton>
+    //   </Tooltip>
+    //     <Tooltip title="Edit">
+    //       <IconButton 
+    //         onClick={() => handleEdit(row)}
+    //         sx={{ fontSize: '2rem' }}>
+    //         <EditIcon fontSize="inherit"/>
+    //       </IconButton>
+    //     </Tooltip>
+    //     <Tooltip title="Delete">
+    //       <IconButton 
+    //         color="error" 
+    //         onClick={() => handleDelete(row)}
+    //         sx={{ fontSize: '2rem' }}>
+    //         <DeleteIcon fontSize="inherit"/>
+    //       </IconButton>
+    //     </Tooltip>
+    //   </Box>
+    // ),
     muiTableHeadCellProps: {
       sx: {
         fontSize: '1.4rem',
@@ -527,6 +670,89 @@ const RolesContent = () => {
         maxWidth="md"
       >
         {renderModalContent()}
+      </Dialog>
+
+      {/* Device Assignment Modal */}
+      <Dialog
+        open={deviceModalOpen}
+        onClose={() => setDeviceModalOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle sx={{ fontSize: '1.8rem' }}>
+          {selectedRoleForDevices && `Assign Devices to ${selectedRoleForDevices.role_name}`}
+        </DialogTitle>
+        <DialogContent>
+          {selectedRoleForDevices && (
+            <Box sx={{ 
+              height: '380px', // Fixed height to accommodate about 4 devices
+              overflow: 'auto'  // Enable scrolling
+            }}>
+              <List>
+                {devices.map((device) => {
+                  const isAssigned = roleDevices[selectedRoleForDevices.role_id]?.includes(device.device_id);
+                  
+                  return (
+                    <ListItem key={device.device_id}>
+                      <ListItemText 
+                        primary={device.device_name} 
+                        secondary={device.description}
+                        primaryTypographyProps={{ fontSize: '1.4rem' }}
+                        secondaryTypographyProps={{ fontSize: '1.2rem' }}
+                      />
+                      <ListItemSecondaryAction sx={{ width: '100px' }}>
+                        <Switch
+                          edge="end"
+                          checked={isAssigned}
+                          onChange={(e) => handleDeviceAssignment(
+                            selectedRoleForDevices.role_id, 
+                            device.device_id, 
+                            e.target.checked
+                          )}
+                          color="primary"
+                          sx={{ 
+                            width: 80,
+                            height: 48,
+                            padding: 1,
+                            "& .MuiSwitch-switchBase": {
+                              margin: 1,
+                              padding: 0,
+                              transform: "translateY(-2px)",
+                              "&.Mui-checked": {
+                                transform: "translateX(30px) translateY(-2px)",
+                              },
+                            },
+                            "& .MuiSwitch-thumb": {
+                              width: 36,
+                              height: 36,
+                            },
+                            "& .MuiSwitch-track": {
+                              borderRadius: 20 / 2,
+                            }, 
+                          }}
+                        />
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  );
+                })}
+                {devices.length === 0 && (
+                  <Typography sx={{ p: 2, textAlign: 'center', color: 'text.secondary', fontSize: '1.4rem' }}>
+                    No devices available. Please create devices first.
+                  </Typography>
+                )}
+              </List>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setDeviceModalOpen(false)} 
+            variant="contained"
+            sx={{ fontSize: '1.2rem' }}
+          >
+            Done
+          </Button>
+        </DialogActions>
       </Dialog>
 
     </Box>

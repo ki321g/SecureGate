@@ -955,7 +955,13 @@ const UsersContent = () => {
         password: false,
         email: false,
         phone_number: false,
-      } 
+      },
+      sorting: [
+        {
+          id: 'last_name',
+          asc: true // Sort by newest first
+        }
+      ] 
     },
     paginationDisplayMode: "pages",
     muiPaginationProps: {
