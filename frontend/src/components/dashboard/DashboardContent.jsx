@@ -24,9 +24,11 @@ import {
 import PeopleIcon from '@mui/icons-material/People';
 import DevicesIcon from '@mui/icons-material/Devices';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
+import BadgeIcon from '@mui/icons-material/Badge';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import ImportantDevicesIcon from '@mui/icons-material/ImportantDevices';
 
 // Charts
 import { 
@@ -52,8 +54,7 @@ import { useData } from '../../contexts/dataContext';
 import { 
   usersApi, 
   rolesApi,
-  devicesApi, 
-  roleToDeviceApi, 
+  devicesApi,
   accessLogsApi,
   deviceLogsApi 
 } from '../../api/supabase/supabaseApi';
@@ -74,11 +75,6 @@ const DashboardContent = () => {
   const [selectedDeviceTrend, setSelectedDeviceTrend] = useState('');
   const [selectedUserTrend, setSelectedUserTrend] = useState('');
 
-
-  const [roleToDeviceData, setRoleToDeviceData] = useState([]);
-  const [selectedRole, setSelectedRole] = useState('');
-
-
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalRoles: 0,
@@ -88,61 +84,49 @@ const DashboardContent = () => {
     recentLogs: []
   });
 
-  
-    useEffect(() => {
-        const fetchUsersData = async () => {
-          try {
-            const { data, error } = await usersApi.getAll();
+  // Fetch all initial data in one useEffect
+  useEffect(() => {
+    const fetchAllData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch all data in parallel
+        const [usersResponse, rolesResponse, devicesResponse] = await Promise.all([
+          usersApi.getAll(),
+          rolesApi.getAll(),
+          devicesApi.getAll()
+        ]);
+        
+        // Handle errors
+        if (usersResponse.error) throw usersResponse.error;
+        if (rolesResponse.error) throw rolesResponse.error;
+        if (devicesResponse.error) throw devicesResponse.error;
+        
+        // Update state
+        setUsers(usersResponse.data);
+        setRoles(rolesResponse.data);
+        setDevices(devicesResponse.data);
+        
+        console.log('USERS:', usersResponse.data);
+        console.log('ROLES:', rolesResponse.data);
+        console.log('DEVICES:', devicesResponse.data);
+      } catch (error) {
+        console.error('Error fetching initial data:', error.message);
+      }
+    };
+    
+    fetchAllData();
+  }, [setUsers, setRoles, setDevices]);
 
-            if (error) throw error;
-            setUsers(data);
-            console.log('USERS:', data);
-          } catch (error) {
-            console.error('Error fetching USERS data:', error.message);
-          }
-        };
-
-        const fetchRolesData = async () => {
-            try {
-                    const { data, error } = await rolesApi.getAll();
-                
-                    if (error) throw error;
-                    setRoles(data);
-                    console.log('ROLES:', data);
-            } catch (error) {
-                console.error('Error fetching ROLES data:', error.message);
-            }
-        };
-
-        const fetchDevicesData = async () => {
-            try {
-                const { data, error } = await devicesApi.getAll();
-                
-                if (error) throw error;
-                setDevices(data);
-                console.log('DEVICES:', data);
-
-            } catch (error) {
-                console.error('Error fetching DEVICES data:', error.message);
-            }
-        };
-
-        fetchRolesData();
-        fetchDevicesData();
-        fetchUsersData();
-    }, [setRoles, setDevices, setUsers]);
-
-  // Fetch access logs data
+  // Fetch access logs in a separate useEffect
   useEffect(() => {
     let isMounted = true;
-
+    
     const fetchAccessLogsData = async () => {
       try {
         const { data, error } = await accessLogsApi.getAll();
         
         if (error) throw error;
         
-        // Only update state if component is still mounted
         if (isMounted) {
           setAccessLogs(data);
         }
@@ -153,23 +137,21 @@ const DashboardContent = () => {
     
     fetchAccessLogsData();
     
-    // Cleanup function to prevent state updates after unmounting
     return () => {
       isMounted = false;
     };
-  }, [setAccessLogs]);
+  }, []);
 
-  // Fetch device logs data
+  // Fetch device logs in a separate useEffect
   useEffect(() => {
     let isMounted = true;
-
+    
     const fetchDeviceLogsData = async () => {
       try {
         const { data, error } = await deviceLogsApi.getAll();
         
         if (error) throw error;
         
-        // Only update state if component is still mounted
         if (isMounted) {
           setDeviceLogs(data);
         }
@@ -180,42 +162,12 @@ const DashboardContent = () => {
     
     fetchDeviceLogsData();
     
-    // Cleanup function to prevent state updates after unmounting
     return () => {
       isMounted = false;
     };
-  }, [setDeviceLogs]);
+  }, []);
 
-
-  // Fetch role-to-device data
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchRoleToDeviceData = async () => {
-      try {
-        const { data, error } = await roleToDeviceApi.getAll();
-        
-        if (error) throw error;
-        
-        // Only update state if component is still mounted
-        if (isMounted) {
-          setRoleToDeviceData(data);
-        }
-      } catch (error) {
-        console.error('Error fetching ROLE-TO-DEVICE data:', error.message);
-      }
-    };
-    
-    fetchRoleToDeviceData();
-    
-    // Cleanup function to prevent state updates after unmounting
-    return () => {
-      isMounted = false;
-    };
-  }, [setRoleToDeviceData]);
-
-
-  // Calculate statistics
+  // Calculate statistics in a separate useEffect
   useEffect(() => {
     if (users && roles && devices && accessLogs) {
       // Count access granted and denied
@@ -238,7 +190,7 @@ const DashboardContent = () => {
       
       setIsLoading(false);
     }
-  }, [users, roles, devices, accessLogs, setStats]);
+  }, [users, roles, devices, accessLogs]);
 
   // Prepare data for access chart
   const accessChartData = useMemo(() => {
@@ -295,43 +247,6 @@ const DashboardContent = () => {
       .slice(-14);
   }, [accessLogs, selectedUserTrend]);
   
-  // const prepareAccessTrendsData = (logs) => {
-  //   // Group logs by date
-  //   const groupedByDate = logs.reduce((acc, log) => {
-  //     // Format date to YYYY-MM-DD to group by day
-  //     const date = new Date(log.created_at);
-  //     const dateStr = date.toISOString().split('T')[0];
-      
-  //     if (!acc[dateStr]) {
-  //       acc[dateStr] = { 
-  //         date: dateStr, 
-  //         granted: 0, 
-  //         denied: 0 
-  //       };
-  //     }
-      
-  //     if (log.success) {
-  //       acc[dateStr].granted += 1;
-  //     } else {
-  //       acc[dateStr].denied += 1;
-  //     }
-      
-  //     return acc;
-  //   }, {});
-    
-  //   // Convert to array and sort by date
-  //   return Object.values(groupedByDate)
-  //     .sort((a, b) => new Date(a.date) - new Date(b.date))
-  //     // Limit to last 14 days for better visualization
-  //     .slice(-14);
-  // };
-
-  // // Create the data in a useMemo to avoid recalculation on every render
-  // const accessTrendsData = useMemo(() => {
-  //   return prepareAccessTrendsData(accessLogs);
-  // }, [accessLogs]);
-
-
 // Function to prepare device trends data
   const deviceTrendsData = useMemo(() => {
     // Filter by selected device if one is selected
@@ -372,167 +287,31 @@ const DashboardContent = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <Typography 
-        variant="h4" 
-        component="h1" 
-        gutterBottom
-        sx={{ fontSize: '2rem' }}
-      >
-        Dashboard Overview
-      </Typography>
 
-      {/* Stats Cards */}
-      <Grid container spacing={3}>
-        {/* Users Card */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper 
-            elevation={3}
+       {/* Dashboard Overview */}
+       <Grid item xs={12}>
+        <Paper 
+          elevation={3}
+          sx={{ 
+            p: 2, 
+            borderRadius: 2,
+            backgroundColor: theme.palette.primary.main,
+            color: 'white',
+            textAlign: 'center',
+          }}
+        >
+          <Typography 
+            variant="h1" 
+            component="h1"
             sx={{ 
-              p: 2, 
-              display: 'flex', 
-              flexDirection: 'column',
-              height: '100%',
-              borderRadius: 2,
-              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(25, 118, 210, 0.08)'
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
-                <PeopleIcon />
-              </Avatar>
-              <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
-                Users
-              </Typography>
-            </Box>
-            <Typography variant="h3" component="div" sx={{ fontWeight: 'bold', fontSize: '3rem' }}>
-              {stats.totalUsers}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: '1.2rem' }}>
-              Total registered users
-            </Typography>
-          </Paper>
-        </Grid>
-
-        {/* Roles Card */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper 
-            elevation={3}
-            sx={{ 
-              p: 2, 
-              display: 'flex', 
-              flexDirection: 'column',
-              height: '100%',
-              borderRadius: 2,
-              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(76, 175, 80, 0.08)'
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Avatar sx={{ bgcolor: 'success.main', mr: 2 }}>
-                <VpnKeyIcon />
-              </Avatar>
-              <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
-                Roles
-              </Typography>
-            </Box>
-            <Typography variant="h3" component="div" sx={{ fontWeight: 'bold', fontSize: '3rem' }}>
-              {stats.totalRoles}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: '1.2rem' }}>
-              Access control roles
-            </Typography>
-          </Paper>
-        </Grid>
-
-        {/* Devices Card */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper 
-            elevation={3}
-            sx={{ 
-              p: 2, 
-              display: 'flex', 
-              flexDirection: 'column',
-              height: '100%',
-              borderRadius: 2,
-              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 152, 0, 0.08)'
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Avatar sx={{ bgcolor: 'warning.main', mr: 2 }}>
-                <DevicesIcon />
-              </Avatar>
-              <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
-                Devices
-              </Typography>
-            </Box>
-            <Typography variant="h3" component="div" sx={{ fontWeight: 'bold', fontSize: '3rem' }}>
-              {stats.totalDevices}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: '1.2rem' }}>
-              Connected smart devices
-            </Typography>
-          </Paper>
-        </Grid>
-
-        {/* Access Card */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper 
-            elevation={3}
-            sx={{ 
-              p: 2, 
-              display: 'flex', 
-              flexDirection: 'column',
-              height: '100%',
-              borderRadius: 2,
-              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(244, 67, 54, 0.08)'
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Avatar sx={{ bgcolor: 'error.main', mr: 2 }}>
-                <AccessTimeIcon />
-              </Avatar>
-              <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
-                Access Attempts
-              </Typography>
-            </Box>
-            <Typography variant="h3" component="div" sx={{ fontWeight: 'bold', fontSize: '3rem' }}>
-              {stats.accessGranted + stats.accessDenied}
-            </Typography>
-            <Box sx={{ display: 'flex', mt: 1, gap: 1 }}>
-              <Chip 
-                icon={<CheckCircleIcon />} 
-                label={`${stats.accessGranted} Granted`} 
-                size="medium" 
-                color="success"
-                sx={{ 
-                  fontSize: '1.2rem', 
-                  flexGrow: 1,
-                  justifyContent: 'flex-start', 
-                  height: '36px', 
-                  '& .MuiChip-icon': {
-                    fontSize: '1.4rem'
-                  }
-                }}
-              />
-              <Chip 
-                icon={<CancelIcon />} 
-                label={`${stats.accessDenied} Denied`} 
-                size="medium" 
-                color="error"
-                sx={{ 
-                  fontSize: '1.2rem', 
-                  flexGrow: 1, 
-                  justifyContent: 'flex-start', 
-                  height: '36px', 
-                  '& .MuiChip-icon': {
-                    fontSize: '1.4rem' 
-                  }
-                }}
-              />
-            </Box>
-          </Paper>
-        </Grid>
+              fontSize: '2.4rem', 
+              fontWeight: 'bold',
+              color: '#1e1e1e' 
+            }}>
+               Dashboard Overview
+          </Typography>
+        </Paper>
       </Grid>
-
 
       {/* System Status Summary */}
       <Grid container spacing={3} sx={{ my: -4 }}>
@@ -548,6 +327,161 @@ const DashboardContent = () => {
             <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
               System Summary
             </Typography>
+
+
+            {/* Stats Cards */}
+            <Grid container spacing={3} mb={2}>
+              {/* Users Card */}
+              <Grid item xs={12} sm={6} md={3}>
+                <Paper 
+                  variant="outlined"
+                  sx={{ 
+                    p: 2, 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    height: '100%',
+                    borderRadius: 2,
+                    backgroundColor: '#1e1e1e'
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
+                      <PeopleIcon />
+                    </Avatar>
+                    <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
+                      Users
+                    </Typography>
+                  </Box>
+                  <Typography variant="h3" component="div" sx={{ fontWeight: 'bold', fontSize: '3rem' }}>
+                    {stats.totalUsers}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: '1.2rem' }}>
+                    Total registered users
+                  </Typography>
+                </Paper>
+              </Grid>
+
+              {/* Roles Card */}
+              <Grid item xs={12} sm={6} md={3}>
+                <Paper 
+                  variant="outlined"
+                  sx={{ 
+                    p: 2, 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    height: '100%',
+                    borderRadius: 2,
+                    backgroundColor: '#1e1e1e'
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar sx={{ bgcolor: 'success.main', mr: 2 }}>
+                      <BadgeIcon />
+                    </Avatar>
+                    <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
+                      Roles
+                    </Typography>
+                  </Box>
+                  <Typography variant="h3" component="div" sx={{ fontWeight: 'bold', fontSize: '3rem' }}>
+                    {stats.totalRoles}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: '1.2rem' }}>
+                    Access control roles
+                  </Typography>
+                </Paper>
+              </Grid>
+
+              {/* Devices Card */}
+              <Grid item xs={12} sm={6} md={3}>
+                <Paper 
+                  variant="outlined"
+                  sx={{ 
+                    p: 2, 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    height: '100%',
+                    borderRadius: 2,
+                    backgroundColor: '#1e1e1e'
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar sx={{ bgcolor: 'warning.main', mr: 2 }}>
+                      <ImportantDevicesIcon />
+                    </Avatar>
+                    <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
+                      Devices
+                    </Typography>
+                  </Box>
+                  <Typography variant="h3" component="div" sx={{ fontWeight: 'bold', fontSize: '3rem' }}>
+                    {stats.totalDevices}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: '1.2rem' }}>
+                    Connected smart devices
+                  </Typography>
+                </Paper>
+              </Grid>
+
+              {/* Access Card */}
+              <Grid item xs={12} sm={6} md={3}>
+                <Paper 
+                  variant="outlined"
+                  sx={{ 
+                    p: 2, 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    height: '100%',
+                    borderRadius: 2,
+                    backgroundColor: '#1e1e1e'
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar sx={{ bgcolor: 'error.main', mr: 2 }}>
+                      <AccessTimeIcon />
+                    </Avatar>
+                    <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
+                      Access Attempts
+                    </Typography>
+                  </Box>
+                  <Typography variant="h3" component="div" sx={{ fontWeight: 'bold', fontSize: '3rem' }}>
+                    {stats.accessGranted + stats.accessDenied}
+                  </Typography>
+                  <Box sx={{ display: 'flex', mt: 1, gap: 1 }}>
+                    <Chip 
+                      icon={<CheckCircleIcon />} 
+                      label={`${stats.accessGranted} Granted`} 
+                      size="medium" 
+                      color="success"
+                      sx={{ 
+                        fontSize: '1.2rem', 
+                        flexGrow: 1,
+                        justifyContent: 'flex-start', 
+                        height: '36px', 
+                        '& .MuiChip-icon': {
+                          fontSize: '1.4rem'
+                        }
+                      }}
+                    />
+                    <Chip 
+                      icon={<CancelIcon />} 
+                      label={`${stats.accessDenied} Denied`} 
+                      size="medium" 
+                      color="error"
+                      sx={{ 
+                        fontSize: '1.2rem', 
+                        flexGrow: 1, 
+                        justifyContent: 'flex-start', 
+                        height: '36px', 
+                        '& .MuiChip-icon': {
+                          fontSize: '1.4rem' 
+                        }
+                      }}
+                    />
+                  </Box>
+                </Paper>
+              </Grid>
+            </Grid>
+
+             {/* Stats Cards */}
             <Grid container spacing={2}>
               <Grid item xs={12} md={4}>
                 <Card variant="outlined">
@@ -582,20 +516,20 @@ const DashboardContent = () => {
                     titleTypographyProps={{ fontSize: '1.4rem' }}
                     avatar={
                       <Avatar sx={{ bgcolor: 'success.main' }}>
-                        <VpnKeyIcon />
+                        <BadgeIcon />
                       </Avatar>
                     }
                   />
                   <Divider />
                   <CardContent>
                     <Typography variant="body1" sx={{ fontSize: '1.2rem' }}>
-                      • {roles.filter(role => role.role_name.toLowerCase() === 'admin').length > 0 ? 'Admin role configured' : 'No admin role'}
+                      • {roles.filter(role => role.role_name.toLowerCase() === 'admin').length} Admin role(s) configured
                     </Typography>
                     <Typography variant="body1" sx={{ fontSize: '1.2rem' }}>
-                      • {roles.filter(role => role.role_name.toLowerCase() === 'cleaner').length > 0 ? 'Cleaner role configured' : 'No Cleaner role'}
+                      • {roles.filter(role => role.role_name.toLowerCase() === 'cleaner').length} Cleaner role(s) configured
                     </Typography>
                     <Typography variant="body1" sx={{ fontSize: '1.2rem' }}>
-                      • {roles.length - 2} custom roles
+                      • {roles.length - (roles.filter(role => role.role_name.toLowerCase() === 'admin').length + roles.filter(role => role.role_name.toLowerCase() === 'cleaner').length)} custom roles
                     </Typography>
                   </CardContent>
                 </Card>
@@ -608,7 +542,7 @@ const DashboardContent = () => {
                     titleTypographyProps={{ fontSize: '1.4rem' }}
                     avatar={
                       <Avatar sx={{ bgcolor: 'warning.main' }}>
-                        <DevicesIcon />
+                        <ImportantDevicesIcon />
                       </Avatar>
                     }
                   />
@@ -635,6 +569,32 @@ const DashboardContent = () => {
         </Grid>
       </Grid>
 
+      {/* Lab Access Banner */}
+      <Grid item xs={12} sx={{ my: 3 }}>
+        <Paper 
+          elevation={3}
+          sx={{ 
+            p: 2, 
+            borderRadius: 2,
+            backgroundColor: theme.palette.primary.main,
+                  color: 'white',
+            textAlign: 'center',
+            mb: -8
+          }}
+        >
+          <Typography  
+            variant="h1" 
+            component="h1"
+            sx={{ 
+              fontSize: '2.4rem', 
+              fontWeight: 'bold',
+              color: '#1e1e1e' 
+            }}>
+              Lab Access
+          </Typography>
+        </Paper>
+      </Grid> 
+
       {/* Charts and Recent Activity */}
       <Grid container spacing={3} sx={{ mt: 1 }}>
         {/* Access Chart */}
@@ -650,7 +610,7 @@ const DashboardContent = () => {
           >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
-                Lab Access Statistics
+              Statistics{/* Lab Access Statistics */}
               </Typography>
               <FormControl sx={{ minWidth: 150 }}>
                 <Select
@@ -733,7 +693,7 @@ const DashboardContent = () => {
             }}
           >
             <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
-              Recent Lab Access Activity
+              Recent Activity{/* Recent Lab Access Activity */}
             </Typography>
             <List sx={{ width: '100%', maxHeight: 300, overflow: 'auto' }}>
               {stats.recentLogs.map((log) => (
@@ -755,12 +715,12 @@ const DashboardContent = () => {
                           size="medium" 
                           color={log.success ? 'success' : 'error'}
                           sx={{ 
-                            fontSize: '1.4rem', // Increased font size
+                            fontSize: '1.4rem', 
                             fontWeight: 'bold',
-                            height: '32px', // Increased height
-                            padding: '0 10px', // Added horizontal padding
+                            height: '32px', 
+                            padding: '0 10px', 
                             '& .MuiChip-label': {
-                              padding: '0 8px' // Increased padding around the label
+                              padding: '0 8px' 
                             }
                           }}
                         />
@@ -821,7 +781,7 @@ const DashboardContent = () => {
           >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
-                Lab Access Trends Over Time
+                Trends Over Time{/* Lab Access Trends Over Time */}
               </Typography>
               <FormControl sx={{ minWidth: 150 }}>
                 <Select
@@ -913,85 +873,30 @@ const DashboardContent = () => {
           </Paper>
         </Grid>
 
-        
-      {/* Access Trends Over Time */}
-      {/* <Grid item xs={12}>
+       {/* Device Logs Banner */}
+       <Grid item xs={12} >
         <Paper 
           elevation={3}
           sx={{ 
             p: 2, 
-            height: '100%',
             borderRadius: 2,
-            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
+            backgroundColor: theme.palette.primary.main,
+                  color: 'white',
+            textAlign: 'center',
           }}
         >
-          <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
-            Lab Access Trends Over Time
+          <Typography  
+            variant="h1" 
+            component="h1"
+            sx={{ 
+              fontSize: '2.4rem', 
+              fontWeight: 'bold',
+              color: '#1e1e1e' 
+            }}>
+              Device(s)
           </Typography>
-          <Box sx={{ height: 400 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={accessTrendsData}
-                margin={{
-                  top: 5,
-                  right: 30,
-                  left: 20,
-                  bottom: 5,
-                }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
-                  tick={{ fontSize: 14 }}
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                  }}
-                />
-                <YAxis tick={{ fontSize: 14 }} />
-                <Tooltip 
-                  formatter={(value, name) => [
-                    value, 
-                    name === 'granted' ? 'Granted Access' : 'Denied Access'
-                  ]}
-                  labelFormatter={(label) => {
-                    const date = new Date(label);
-                    return date.toLocaleDateString(undefined, { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    });
-                  }}
-                  contentStyle={{ fontSize: '1.2rem' }}
-                />
-                <Legend 
-                  wrapperStyle={{ fontSize: '1.2rem' }}
-                  formatter={(value) => value === 'granted' ? 'Granted Access' : 'Denied Access'}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="granted" 
-                  stroke="#4caf50" 
-                  strokeWidth={2}
-                  activeDot={{ r: 8 }}
-                  name="granted"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="denied" 
-                  stroke="#f44336" 
-                  strokeWidth={2}
-                  activeDot={{ r: 8 }}
-                  name="denied"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </Box>
         </Paper>
-      </Grid> */}
-
-
+      </Grid> 
 
         
         {/* Device Logs Chart */}
@@ -1007,7 +912,7 @@ const DashboardContent = () => {
           >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
-                Device Logs Statistics
+                Statistics{/* Device Logs Statistics */}
               </Typography>
               <FormControl sx={{ minWidth: 150 }}>
                 <Select
@@ -1089,14 +994,14 @@ const DashboardContent = () => {
             }}
           >
             <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
-              Recent Device Activity
+              Recent Activity{/* Recent Device Activity */}
             </Typography>
             <List sx={{ width: '100%', maxHeight: 300, overflow: 'auto' }}>
               {deviceLogs.slice(0, 10).map((log) => (
                 <ListItem key={log.log_id} alignItems="flex-start" sx={{ py: 1 }}>
                   <ListItemAvatar>
                     <Avatar>
-                      <DevicesIcon />
+                      <ImportantDevicesIcon />
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
@@ -1177,7 +1082,7 @@ const DashboardContent = () => {
           >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
-                Device Trends Over Time
+                 Trends Over Time{/* Device Trends Over Time */}
               </Typography>
               <FormControl sx={{ minWidth: 150 }}>
                 <Select
@@ -1267,341 +1172,7 @@ const DashboardContent = () => {
             </Box>
           </Paper>
         </Grid>
-
-
-
-
-
-
-
-
-        {/* <Grid container spacing={3} sx={{ mt: 1 }}>
-          <Grid item xs={12}>
-            <Paper 
-              elevation={3}
-              sx={{ 
-                p: 2, 
-                height: '100%',
-                borderRadius: 2,
-                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
-              }}
-            >
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
-                  Device Trends Over Time
-                </Typography>
-                <FormControl sx={{ minWidth: 150 }}>
-                  <Select
-                    value={selectedDeviceTrend}
-                    onChange={(e) => setSelectedDeviceTrend(e.target.value)}
-                    displayEmpty
-                    sx={{ fontSize: '1.2rem' }}
-                  >
-                    <MenuItem value="" sx={{ fontSize: '1.2rem' }}>All Devices</MenuItem>
-                    {deviceLogs
-                      .reduce((devices, log) => {
-                        const deviceName = log.devices?.device_name;
-                        if (deviceName && !devices.includes(deviceName)) {
-                          devices.push(deviceName);
-                        }
-                        return devices;
-                      }, [])
-                      .map((device) => (
-                        <MenuItem key={device} value={device} sx={{ fontSize: '1.2rem' }}>
-                          {device}
-                        </MenuItem>
-                      ))
-                    }
-                  </Select>
-                </FormControl>
-              </Box>
-              <Box sx={{ height: 400 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={deviceTrendsData}
-                    margin={{
-                      top: 5,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="date" 
-                      tick={{ fontSize: 14 }}
-                      tickFormatter={(value) => {
-                        const date = new Date(value);
-                        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                      }}
-                    />
-                    <YAxis tick={{ fontSize: 14 }} />
-                    <Tooltip 
-                      formatter={(value, name) => [
-                        value, 
-                        name === 'success' ? 'Successful Operations' : 'Error Operations'
-                      ]}
-                      labelFormatter={(label) => {
-                        const date = new Date(label);
-                        return date.toLocaleDateString(undefined, { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        });
-                      }}
-                      contentStyle={{ fontSize: '1.2rem' }}
-                    />
-                    <Legend 
-                      wrapperStyle={{ fontSize: '1.2rem' }}
-                      formatter={(value) => value === 'success' ? 'Successful Operations' : 'Error Operations'}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="success" 
-                      stroke="#4caf50" 
-                      strokeWidth={2}
-                      activeDot={{ r: 8 }}
-                      name="success"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="error" 
-                      stroke="#f44336" 
-                      strokeWidth={2}
-                      activeDot={{ r: 8 }}
-                      name="error"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </Box>
-            </Paper>
-          </Grid>
-        </Grid> */}
-
-
-
-
-
-          {/* User Role Distribution */}
-          <Grid item xs={12}>
-            <Paper 
-              elevation={3}
-              sx={{ 
-                p: 2, 
-                height: '100%',
-                borderRadius: 2,
-                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
-              }}
-            >
-              <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
-                User Role Distribution
-              </Typography>
-              <Box sx={{ height: 300 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={roles.map(role => {
-                      const usersWithRole = users.filter(user => user.role_id === role.role_id).length;
-                      return {
-                        name: role.role_name,
-                        users: usersWithRole
-                      };
-                    })}
-                    margin={{
-                      top: 5,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" tick={{ fontSize: 14 }} />
-                    <YAxis tick={{ fontSize: 14 }} />
-                    <Tooltip 
-                      formatter={(value) => [`${value} users`, 'Count']}
-                      contentStyle={{ fontSize: '1.2rem' }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: '1.2rem' }} />
-                    <Bar dataKey="users" fill="#8884d8" name="Users" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Box>
-            </Paper>
-          </Grid>
-        </Grid>
-
-
-      {/* Role-to-Device Distribution */}
-      <Grid item xs={12}>
-        <Paper 
-          elevation={3}
-          sx={{ 
-            p: 2, 
-            height: '100%',
-            borderRadius: 2,
-            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
-          }}
-        >
-          <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
-            Role-to-Device Distribution
-          </Typography>
-          <Box sx={{ height: 400 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={roles.map(role => {
-                  // Find devices assigned to this role
-                  const roleDevices = roleToDeviceData
-                    .filter(rtd => rtd.role_id === role.role_id)
-                    .map(rtd => rtd.device_id);
-                  
-                  // Count devices by type/category if needed
-                  const deviceCount = roleDevices.length;
-                  
-                  return {
-                    name: role.role_name,
-                    devices: deviceCount,
-                    // You could add more specific device types here if needed
-                  };
-                })}
-                margin={{
-                  top: 5,
-                  right: 30,
-                  left: 20,
-                  bottom: 5,
-                }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{ fontSize: 14 }} />
-                <YAxis tick={{ fontSize: 14 }} />
-                <Tooltip 
-                  formatter={(value) => [`${value} devices`, 'Count']}
-                  contentStyle={{ fontSize: '1.2rem' }}
-                />
-                <Legend wrapperStyle={{ fontSize: '1.2rem' }} />
-                <Bar dataKey="devices" fill="#8884d8" name="Devices" />
-              </BarChart>
-            </ResponsiveContainer>
-          </Box>
-        </Paper>
       </Grid>
-
-
-      {/* Role-Device Relationship */}
-      <Grid item xs={12}>
-        <Paper 
-          elevation={3}
-          sx={{ 
-            p: 2, 
-            height: '100%',
-            borderRadius: 2,
-            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
-              Role-Device Relationship
-            </Typography>
-            <FormControl sx={{ minWidth: 200 }}>
-              <Select
-                value={selectedRole || ''}
-                onChange={(e) => setSelectedRole(e.target.value)}
-                displayEmpty
-                sx={{ fontSize: '1.2rem' }}
-              >
-                <MenuItem value="" sx={{ fontSize: '1.2rem' }}>All Roles</MenuItem>
-                {roles.map((role) => (
-                  <MenuItem key={role.role_id} value={role.role_id} sx={{ fontSize: '1.2rem' }}>
-                    {role.role_name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-          <Box sx={{ height: 400 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              {selectedRole ? (
-                // Show devices for selected role
-                <BarChart
-                  data={devices
-                    .filter(device => {
-                      const isAssigned = roleToDeviceData.some(
-                        rtd => rtd.role_id === selectedRole && rtd.device_id === device.device_id
-                      );
-                      return isAssigned;
-                    })
-                    .map(device => ({
-                      name: device.device_name,
-                      value: 1, // Just to show it's assigned
-                    }))}
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize: 14 }} />
-                  <YAxis tick={{ fontSize: 14 }} />
-                  <Tooltip contentStyle={{ fontSize: '1.2rem' }} />
-                  <Bar dataKey="value" fill="#8884d8" name="Assigned to Role" />
-                </BarChart>
-              ) : (
-                // Show all roles and their device counts
-                <BarChart
-                  data={roles.map(role => {
-                    const deviceCount = roleToDeviceData
-                      .filter(rtd => rtd.role_id === role.role_id)
-                      .length;
-                    
-                    return {
-                      name: role.role_name,
-                      devices: deviceCount,
-                    };
-                  })}
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize: 14 }} />
-                  <YAxis tick={{ fontSize: 14 }} />
-                  <Tooltip 
-                    formatter={(value) => [`${value} devices`, 'Count']}
-                    contentStyle={{ fontSize: '1.2rem' }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: '1.2rem' }} />
-                  <Bar dataKey="devices" fill="#8884d8" name="Devices" />
-                </BarChart>
-              )}
-            </ResponsiveContainer>
-          </Box>
-        </Paper>
-      </Grid>
-
-
-
-      {/* Charts and Recent Activity */}
-      {/* <Grid container spacing={3} sx={{ mt: 1 }}> */}
-        {/* Your existing charts */}
-        {/* ...
-      </Grid> */}
-
-      {/* Access Trends Over Time */}
-      {/* <Grid container spacing={3} sx={{ mt: 1 }}>
-        <Grid item xs={12}> */}
-          {/* Access Trends chart component from Step 2 */}
-        {/* </Grid>
-      </Grid> */}
-
-
-
-
-
-      
     </Box>
   );
 };
