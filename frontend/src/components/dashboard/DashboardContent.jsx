@@ -40,14 +40,23 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  LineChart,
+  Line
 } from 'recharts';
 
 // Contexts
 import { useData } from '../../contexts/dataContext';
 
 // API
-import { usersApi, rolesApi, devicesApi, accessLogsApi, deviceLogsApi } from '../../api/supabase/supabaseApi';
+import { 
+  usersApi, 
+  rolesApi,
+  devicesApi, 
+  roleToDeviceApi, 
+  accessLogsApi,
+  deviceLogsApi 
+} from '../../api/supabase/supabaseApi';
 
 // Import default user image
 import { defaultUserImage } from './users/defaultUserImage';
@@ -62,6 +71,12 @@ const DashboardContent = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDevice, setSelectedDevice] = useState('');
   const [selectedUser, setSelectedUser] = useState('');
+  const [selectedDeviceTrend, setSelectedDeviceTrend] = useState('');
+  const [selectedUserTrend, setSelectedUserTrend] = useState('');
+
+
+  const [roleToDeviceData, setRoleToDeviceData] = useState([]);
+  const [selectedRole, setSelectedRole] = useState('');
 
 
   const [stats, setStats] = useState({
@@ -172,6 +187,34 @@ const DashboardContent = () => {
   }, [setDeviceLogs]);
 
 
+  // Fetch role-to-device data
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchRoleToDeviceData = async () => {
+      try {
+        const { data, error } = await roleToDeviceApi.getAll();
+        
+        if (error) throw error;
+        
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setRoleToDeviceData(data);
+        }
+      } catch (error) {
+        console.error('Error fetching ROLE-TO-DEVICE data:', error.message);
+      }
+    };
+    
+    fetchRoleToDeviceData();
+    
+    // Cleanup function to prevent state updates after unmounting
+    return () => {
+      isMounted = false;
+    };
+  }, [setRoleToDeviceData]);
+
+
   // Calculate statistics
   useEffect(() => {
     if (users && roles && devices && accessLogs) {
@@ -213,6 +256,119 @@ const DashboardContent = () => {
     const date = new Date(dateString);
     return date.toLocaleString();
   };
+
+
+  // Function to prepare access trends data
+  const accessTrendsData = useMemo(() => {
+    // Filter logs by selected user if one is selected
+    const filteredLogs = selectedUserTrend 
+      ? accessLogs.filter(log => log.user_id === selectedUserTrend)
+      : accessLogs;
+    
+    // Group logs by date
+    const groupedByDate = filteredLogs.reduce((acc, log) => {
+      // Format date to YYYY-MM-DD to group by day
+      const date = new Date(log.created_at);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      if (!acc[dateStr]) {
+        acc[dateStr] = { 
+          date: dateStr, 
+          granted: 0, 
+          denied: 0 
+        };
+      }
+      
+      if (log.success) {
+        acc[dateStr].granted += 1;
+      } else {
+        acc[dateStr].denied += 1;
+      }
+      
+      return acc;
+    }, {});
+    
+    // Convert to array and sort by date
+    return Object.values(groupedByDate)
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      // Limit to last 14 days for better visualization
+      .slice(-14);
+  }, [accessLogs, selectedUserTrend]);
+  
+  // const prepareAccessTrendsData = (logs) => {
+  //   // Group logs by date
+  //   const groupedByDate = logs.reduce((acc, log) => {
+  //     // Format date to YYYY-MM-DD to group by day
+  //     const date = new Date(log.created_at);
+  //     const dateStr = date.toISOString().split('T')[0];
+      
+  //     if (!acc[dateStr]) {
+  //       acc[dateStr] = { 
+  //         date: dateStr, 
+  //         granted: 0, 
+  //         denied: 0 
+  //       };
+  //     }
+      
+  //     if (log.success) {
+  //       acc[dateStr].granted += 1;
+  //     } else {
+  //       acc[dateStr].denied += 1;
+  //     }
+      
+  //     return acc;
+  //   }, {});
+    
+  //   // Convert to array and sort by date
+  //   return Object.values(groupedByDate)
+  //     .sort((a, b) => new Date(a.date) - new Date(b.date))
+  //     // Limit to last 14 days for better visualization
+  //     .slice(-14);
+  // };
+
+  // // Create the data in a useMemo to avoid recalculation on every render
+  // const accessTrendsData = useMemo(() => {
+  //   return prepareAccessTrendsData(accessLogs);
+  // }, [accessLogs]);
+
+
+// Function to prepare device trends data
+  const deviceTrendsData = useMemo(() => {
+    // Filter by selected device if one is selected
+    const filteredLogs = selectedDeviceTrend 
+      ? deviceLogs.filter(log => log.devices?.device_name === selectedDeviceTrend)
+      : deviceLogs;
+    
+    // Group logs by date
+    const groupedByDate = filteredLogs.reduce((acc, log) => {
+      // Format date to YYYY-MM-DD to group by day
+      const date = new Date(log.created_at);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      if (!acc[dateStr]) {
+        acc[dateStr] = { 
+          date: dateStr, 
+          success: 0, 
+          error: 0 
+        };
+      }
+      
+      if (log.status === true) {
+        acc[dateStr].success += 1;
+      } else {
+        acc[dateStr].error += 1;
+      }
+      
+      return acc;
+    }, {});
+    
+    // Convert to array and sort by date
+    return Object.values(groupedByDate)
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      // Limit to last 14 days for better visualization
+      .slice(-14);
+  }, [deviceLogs, selectedDeviceTrend]);
+
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -650,240 +806,477 @@ const DashboardContent = () => {
             </List>
           </Paper>
         </Grid>
+        
+
+        {/* Access Trends Over Time */}
+        <Grid item xs={12}>
+          <Paper 
+            elevation={3}
+            sx={{ 
+              p: 2, 
+              height: '100%',
+              borderRadius: 2,
+              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
+                Lab Access Trends Over Time
+              </Typography>
+              <FormControl sx={{ minWidth: 150 }}>
+                <Select
+                  value={selectedUserTrend}
+                  onChange={(e) => setSelectedUserTrend(e.target.value)}
+                  displayEmpty
+                  sx={{ fontSize: '1.2rem' }}
+                >
+                  <MenuItem value="" sx={{ fontSize: '1.2rem' }}>All Users</MenuItem>
+                  {accessLogs
+                    .reduce((users, log) => {
+                      const userName = log.users ? `${log.users.first_name} ${log.users.last_name}` : null;
+                      const userId = log.user_id;
+                      if (userName && userId && !users.some(user => user.id === userId)) {
+                        users.push({ id: userId, name: userName });
+                      }
+                      return users;
+                    }, [])
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((user) => (
+                      <MenuItem key={user.id} value={user.id} sx={{ fontSize: '1.2rem' }}>
+                        {user.name}
+                      </MenuItem>
+                    ))
+                  }
+                </Select>
+              </FormControl>
+            </Box>
+            <Box sx={{ height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={accessTrendsData}
+                  margin={{
+                    top: 5,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 14 }}
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                    }}
+                  />
+                  <YAxis tick={{ fontSize: 14 }} />
+                  <Tooltip 
+                    formatter={(value, name) => [
+                      value, 
+                      name === 'granted' ? 'Granted Access' : 'Denied Access'
+                    ]}
+                    labelFormatter={(label) => {
+                      const date = new Date(label);
+                      return date.toLocaleDateString(undefined, { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      });
+                    }}
+                    contentStyle={{ fontSize: '1.2rem' }}
+                  />
+                  <Legend 
+                    wrapperStyle={{ fontSize: '1.2rem' }}
+                    formatter={(value) => value === 'granted' ? 'Granted Access' : 'Denied Access'}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="granted" 
+                    stroke="#4caf50" 
+                    strokeWidth={2}
+                    activeDot={{ r: 8 }}
+                    name="granted"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="denied" 
+                    stroke="#f44336" 
+                    strokeWidth={2}
+                    activeDot={{ r: 8 }}
+                    name="denied"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </Box>
+          </Paper>
+        </Grid>
+
+        
+      {/* Access Trends Over Time */}
+      {/* <Grid item xs={12}>
+        <Paper 
+          elevation={3}
+          sx={{ 
+            p: 2, 
+            height: '100%',
+            borderRadius: 2,
+            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
+            Lab Access Trends Over Time
+          </Typography>
+          <Box sx={{ height: 400 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={accessTrendsData}
+                margin={{
+                  top: 5,
+                  right: 30,
+                  left: 20,
+                  bottom: 5,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  tick={{ fontSize: 14 }}
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                  }}
+                />
+                <YAxis tick={{ fontSize: 14 }} />
+                <Tooltip 
+                  formatter={(value, name) => [
+                    value, 
+                    name === 'granted' ? 'Granted Access' : 'Denied Access'
+                  ]}
+                  labelFormatter={(label) => {
+                    const date = new Date(label);
+                    return date.toLocaleDateString(undefined, { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    });
+                  }}
+                  contentStyle={{ fontSize: '1.2rem' }}
+                />
+                <Legend 
+                  wrapperStyle={{ fontSize: '1.2rem' }}
+                  formatter={(value) => value === 'granted' ? 'Granted Access' : 'Denied Access'}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="granted" 
+                  stroke="#4caf50" 
+                  strokeWidth={2}
+                  activeDot={{ r: 8 }}
+                  name="granted"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="denied" 
+                  stroke="#f44336" 
+                  strokeWidth={2}
+                  activeDot={{ r: 8 }}
+                  name="denied"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
+        </Paper>
+      </Grid> */}
 
 
 
         
-  {/* Device Logs Chart */}
-  <Grid item xs={12} md={6}>
-    <Paper 
-      elevation={3}
-      sx={{ 
-        p: 2, 
-        height: '100%',
-        borderRadius: 2,
-        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
-      }}
-    >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
-          Device Logs Statistics
-        </Typography>
-        <FormControl sx={{ minWidth: 150 }}>
-          <Select
-            value={selectedDevice || ''}
-            onChange={(e) => setSelectedDevice(e.target.value)}
-            displayEmpty
-            sx={{ fontSize: '1.2rem' }}
+        {/* Device Logs Chart */}
+        <Grid item xs={12} md={6}>
+          <Paper 
+            elevation={3}
+            sx={{ 
+              p: 2, 
+              height: '100%',
+              borderRadius: 2,
+              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
+            }}
           >
-            <MenuItem value="" sx={{ fontSize: '1.2rem' }}>All Devices</MenuItem>
-            {deviceLogs
-              .reduce((devices, log) => {
-                const deviceName = log.devices?.device_name;
-                if (deviceName && !devices.includes(deviceName)) {
-                  devices.push(deviceName);
-                }
-                return devices;
-              }, [])
-              .map((device) => (
-                <MenuItem key={device} value={device} sx={{ fontSize: '1.2rem' }}>
-                  {device}
-                </MenuItem>
-              ))
-            }
-          </Select>
-        </FormControl>
-      </Box>
-      <Box sx={{ height: 300 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={deviceLogs
-                .filter(log => !selectedDevice || log.devices?.device_name === selectedDevice)
-                .reduce((acc, log) => {
-                  const success = acc.find(item => item.name === 'Success');
-                  const error = acc.find(item => item.name === 'Error');
-                  
-                  if (log.status === true) {
-                    if (success) success.value += 1;
-                    else acc.push({ name: 'Success', value: 1 });
-                  } else {
-                    if (error) error.value += 1;
-                    else acc.push({ name: 'Error', value: 1 });
-                  }
-                  return acc;
-                }, [])
-              }
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              outerRadius={100}
-              fill="#8884d8"
-              dataKey="value"
-              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-            >
-              {[
-                { name: 'Success', color: '#4caf50' },
-                { name: 'Error', color: '#f44336' }
-              ].map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip formatter={(value) => [`${value} logs`, 'Count']} />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
-      </Box>
-    </Paper>
-  </Grid>
-
-  {/* Recent Device Activity */}
-  <Grid item xs={12} md={6}>
-    <Paper 
-      elevation={3}
-      sx={{ 
-        p: 2, 
-        height: '100%',
-        borderRadius: 2,
-        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
-      }}
-    >
-      <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
-        Recent Device Activity
-      </Typography>
-      <List sx={{ width: '100%', maxHeight: 300, overflow: 'auto' }}>
-        {deviceLogs.slice(0, 10).map((log) => (
-          <ListItem key={log.log_id} alignItems="flex-start" sx={{ py: 1 }}>
-            <ListItemAvatar>
-              <Avatar>
-                <DevicesIcon />
-              </Avatar>
-            </ListItemAvatar>
-            <ListItemText
-              primary={
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography sx={{ fontSize: '1.3rem' }}>
-                    {log.devices ? log.devices.device_name : 'Unknown Device'}
-                  </Typography>
-                  <Chip 
-                    label={log.status === true ? 'SUCCESS' : 'ERROR'} 
-                    size="medium" 
-                    color={log.status === true ? 'success' : 'error'}
-                    sx={{ 
-                      fontSize: '1.4rem',
-                      fontWeight: 'bold',
-                      height: '32px',
-                      padding: '0 10px',
-                      '& .MuiChip-label': {
-                        padding: '0 8px'
-                      }
-                    }}
-                  />
-                </Box>
-              }
-              secondary={
-                <React.Fragment>
-                  <Typography
-                    sx={{ display: 'block', fontSize: '1.1rem' }}
-                    component="span"
-                    variant="body2"
-                    color="text.primary"
-                  >
-                    {log.action || 'No action'} - {log.notes || 'No additional information'}
-                  </Typography>
-                  <Typography
-                    sx={{ display: 'block', fontSize: '1rem' }}
-                    component="span"
-                    variant="body2"
-                    color="text.secondary"
-                  >
-                    User: {log.users ? `${log.users.first_name} ${log.users.last_name}` : 'Unknown User'} • {new Date(log.created_at).toLocaleString()}
-                  </Typography>
-                </React.Fragment>
-              }
-              primaryTypographyProps={{ fontSize: '1.3rem' }}
-              secondaryTypographyProps={{ fontSize: '1.1rem' }}
-            />
-          </ListItem>
-        ))}
-        {deviceLogs.length === 0 && (
-          <ListItem>
-            <ListItemText 
-              primary="No recent device activity" 
-              primaryTypographyProps={{ 
-                fontSize: '1.3rem',
-                textAlign: 'center',
-                color: 'text.secondary'
-              }} 
-            />
-          </ListItem>
-        )}
-      </List>
-    </Paper>
-  </Grid>
-
-
-        {/* Device Logs Analytics */}
-        {/* <Grid container spacing={3} sx={{ mt: 1 }}> */}
-          {/* Device Logs Chart */}
-          {/* <Grid item xs={12} md={6}>
-            <Paper 
-              elevation={3}
-              sx={{ 
-                p: 2, 
-                height: '100%',
-                borderRadius: 2,
-                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
-              }}
-            >
-              <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
                 Device Logs Statistics
               </Typography>
-              <Box sx={{ height: 300 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={deviceLogs.reduce((acc, log) => {
-                      // Group logs by device name
-                      const deviceName = log.devices?.device_name || 'Unknown Device';
-                      const existingDevice = acc.find(item => item.name === deviceName);
-                      
-                      if (existingDevice) {
-                        existingDevice.success += log.status === true ? 1 : 0;
-                        existingDevice.error += log.status === true ? 0 : 1;
-                      } else {
-                        acc.push({
-                          name: deviceName,
-                          success: log.status === true ? 1 : 0,
-                          error: log.status === true ? 0 : 1
-                        });
+              <FormControl sx={{ minWidth: 150 }}>
+                <Select
+                  value={selectedDevice || ''}
+                  onChange={(e) => setSelectedDevice(e.target.value)}
+                  displayEmpty
+                  sx={{ fontSize: '1.2rem' }}
+                >
+                  <MenuItem value="" sx={{ fontSize: '1.2rem' }}>All Devices</MenuItem>
+                  {deviceLogs
+                    .reduce((devices, log) => {
+                      const deviceName = log.devices?.device_name;
+                      if (deviceName && !devices.includes(deviceName)) {
+                        devices.push(deviceName);
                       }
-                      return acc;
-                    }, [])}
-                    margin={{
-                      top: 5,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
+                      return devices;
+                    }, [])
+                    .map((device) => (
+                      <MenuItem key={device} value={device} sx={{ fontSize: '1.2rem' }}>
+                        {device}
+                      </MenuItem>
+                    ))
+                  }
+                </Select>
+              </FormControl>
+            </Box>
+            <Box sx={{ height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={deviceLogs
+                      .filter(log => !selectedDevice || log.devices?.device_name === selectedDevice)
+                      .reduce((acc, log) => {
+                        const success = acc.find(item => item.name === 'Success');
+                        const error = acc.find(item => item.name === 'Error');
+                        
+                        if (log.status === true) {
+                          if (success) success.value += 1;
+                          else acc.push({ name: 'Success', value: 1 });
+                        } else {
+                          if (error) error.value += 1;
+                          else acc.push({ name: 'Error', value: 1 });
+                        }
+                        return acc;
+                      }, [])
+                    }
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                   >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" tick={{ fontSize: 14 }} />
-                    <YAxis tick={{ fontSize: 14 }} />
-                    <Tooltip 
-                      formatter={(value, name) => [`${value} logs`, name === 'success' ? 'Success' : 'Error']}
-                      contentStyle={{ fontSize: '1.2rem' }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: '1.2rem' }} />
-                    <Bar dataKey="success" fill="#4caf50" name="Success" />
-                    <Bar dataKey="error" fill="#f44336" name="Error" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Box>
-            </Paper>
-          </Grid> */}
+                    {[
+                      { name: 'Success', color: '#4caf50' },
+                      { name: 'Error', color: '#f44336' }
+                    ].map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [`${value} logs`, 'Count']} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </Box>
+          </Paper>
+        </Grid> 
 
-          {/* Device Logs Chart */}
-          {/* <Grid item xs={12} md={6}>
+        {/* Recent Device Activity */}
+        <Grid item xs={12} md={6}>
+          <Paper 
+            elevation={3}
+            sx={{ 
+              p: 2, 
+              height: '100%',
+              borderRadius: 2,
+              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
+            }}
+          >
+            <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
+              Recent Device Activity
+            </Typography>
+            <List sx={{ width: '100%', maxHeight: 300, overflow: 'auto' }}>
+              {deviceLogs.slice(0, 10).map((log) => (
+                <ListItem key={log.log_id} alignItems="flex-start" sx={{ py: 1 }}>
+                  <ListItemAvatar>
+                    <Avatar>
+                      <DevicesIcon />
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography sx={{ fontSize: '1.3rem' }}>
+                          {log.devices ? log.devices.device_name : 'Unknown Device'}
+                        </Typography>
+                        <Chip 
+                          label={log.status === true ? 'SUCCESS' : 'ERROR'} 
+                          size="medium" 
+                          color={log.status === true ? 'success' : 'error'}
+                          sx={{ 
+                            fontSize: '1.4rem',
+                            fontWeight: 'bold',
+                            height: '32px',
+                            padding: '0 10px',
+                            '& .MuiChip-label': {
+                              padding: '0 8px'
+                            }
+                          }}
+                        />
+                      </Box>
+                    }
+                    secondary={
+                      <React.Fragment>
+                        <Typography
+                          sx={{ display: 'block', fontSize: '1.1rem' }}
+                          component="span"
+                          variant="body2"
+                          color="text.primary"
+                        >
+                          {log.action || 'No action'} - {log.notes || 'No additional information'}
+                        </Typography>
+                        <Typography
+                          sx={{ display: 'block', fontSize: '1rem' }}
+                          component="span"
+                          variant="body2"
+                          color="text.secondary"
+                        >
+                          User: {log.users ? `${log.users.first_name} ${log.users.last_name}` : 'Unknown User'} • {new Date(log.created_at).toLocaleString()}
+                        </Typography>
+                      </React.Fragment>
+                    }
+                    primaryTypographyProps={{ fontSize: '1.3rem' }}
+                    secondaryTypographyProps={{ fontSize: '1.1rem' }}
+                  />
+                </ListItem>
+              ))}
+              {deviceLogs.length === 0 && (
+                <ListItem>
+                  <ListItemText 
+                    primary="No recent device activity" 
+                    primaryTypographyProps={{ 
+                      fontSize: '1.3rem',
+                      textAlign: 'center',
+                      color: 'text.secondary'
+                    }} 
+                  />
+                </ListItem>
+              )}
+            </List>
+          </Paper>
+        </Grid>
+
+
+
+        {/* Device Trends Over Time */}
+        <Grid item xs={12}>
+          <Paper 
+            elevation={3}
+            sx={{ 
+              p: 2, 
+              height: '100%',
+              borderRadius: 2,
+              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
+                Device Trends Over Time
+              </Typography>
+              <FormControl sx={{ minWidth: 150 }}>
+                <Select
+                  value={selectedDeviceTrend}
+                  onChange={(e) => setSelectedDeviceTrend(e.target.value)}
+                  displayEmpty
+                  sx={{ fontSize: '1.2rem' }}
+                >
+                  <MenuItem value="" sx={{ fontSize: '1.2rem' }}>All Devices</MenuItem>
+                  {deviceLogs
+                    .reduce((devices, log) => {
+                      const deviceName = log.devices?.device_name;
+                      if (deviceName && !devices.includes(deviceName)) {
+                        devices.push(deviceName);
+                      }
+                      return devices;
+                    }, [])
+                    .sort((a, b) => a.localeCompare(b)) 
+                    .map((device) => (
+                      <MenuItem key={device} value={device} sx={{ fontSize: '1.2rem' }}>
+                        {device}
+                      </MenuItem>
+                    ))
+                  }
+                </Select>
+              </FormControl>
+            </Box>
+            <Box sx={{ height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={deviceTrendsData}
+                  margin={{
+                    top: 5,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 14 }}
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                    }}
+                  />
+                  <YAxis tick={{ fontSize: 14 }} />
+                  <Tooltip 
+                    formatter={(value, name) => [
+                      value, 
+                      name === 'success' ? 'Successful Operations' : 'Error Operations'
+                    ]}
+                    labelFormatter={(label) => {
+                      const date = new Date(label);
+                      return date.toLocaleDateString(undefined, { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      });
+                    }}
+                    contentStyle={{ fontSize: '1.2rem' }}
+                  />
+                  <Legend 
+                    wrapperStyle={{ fontSize: '1.2rem' }}
+                    formatter={(value) => value === 'success' ? 'Successful Operations' : 'Error Operations'}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="success" 
+                    stroke="#4caf50" 
+                    strokeWidth={2}
+                    activeDot={{ r: 8 }}
+                    name="success"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="error" 
+                    stroke="#f44336" 
+                    strokeWidth={2}
+                    activeDot={{ r: 8 }}
+                    name="error"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </Box>
+          </Paper>
+        </Grid>
+
+
+
+
+
+
+
+
+        {/* <Grid container spacing={3} sx={{ mt: 1 }}>
+          <Grid item xs={12}>
             <Paper 
               elevation={3}
               sx={{ 
@@ -895,12 +1288,12 @@ const DashboardContent = () => {
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
-                  Device Logs Statistics
+                  Device Trends Over Time
                 </Typography>
                 <FormControl sx={{ minWidth: 150 }}>
                   <Select
-                    value={selectedDevice || ''}
-                    onChange={(e) => setSelectedDevice(e.target.value)}
+                    value={selectedDeviceTrend}
+                    onChange={(e) => setSelectedDeviceTrend(e.target.value)}
                     displayEmpty
                     sx={{ fontSize: '1.2rem' }}
                   >
@@ -922,52 +1315,76 @@ const DashboardContent = () => {
                   </Select>
                 </FormControl>
               </Box>
-              <Box sx={{ height: 300 }}>
+              <Box sx={{ height: 400 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={deviceLogs
-                        .filter(log => !selectedDevice || log.devices?.device_name === selectedDevice)
-                        .reduce((acc, log) => {
-                          const success = acc.find(item => item.name === 'Success');
-                          const error = acc.find(item => item.name === 'Error');
-                          
-                          if (log.status === true) {
-                            if (success) success.value += 1;
-                            else acc.push({ name: 'Success', value: 1 });
-                          } else {
-                            if (error) error.value += 1;
-                            else acc.push({ name: 'Error', value: 1 });
-                          }
-                          return acc;
-                        }, [])
-                      }
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {[
-                        { name: 'Success', color: '#4caf50' },
-                        { name: 'Error', color: '#f44336' }
-                      ].map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [`${value} logs`, 'Count']} />
-                    <Legend />
-                  </PieChart>
+                  <LineChart
+                    data={deviceTrendsData}
+                    margin={{
+                      top: 5,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 14 }}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                      }}
+                    />
+                    <YAxis tick={{ fontSize: 14 }} />
+                    <Tooltip 
+                      formatter={(value, name) => [
+                        value, 
+                        name === 'success' ? 'Successful Operations' : 'Error Operations'
+                      ]}
+                      labelFormatter={(label) => {
+                        const date = new Date(label);
+                        return date.toLocaleDateString(undefined, { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        });
+                      }}
+                      contentStyle={{ fontSize: '1.2rem' }}
+                    />
+                    <Legend 
+                      wrapperStyle={{ fontSize: '1.2rem' }}
+                      formatter={(value) => value === 'success' ? 'Successful Operations' : 'Error Operations'}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="success" 
+                      stroke="#4caf50" 
+                      strokeWidth={2}
+                      activeDot={{ r: 8 }}
+                      name="success"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="error" 
+                      stroke="#f44336" 
+                      strokeWidth={2}
+                      activeDot={{ r: 8 }}
+                      name="error"
+                    />
+                  </LineChart>
                 </ResponsiveContainer>
               </Box>
             </Paper>
-          </Grid> */}
+          </Grid>
+        </Grid> */}
 
 
-          {/* Recent Device Activity */}
-          {/* <Grid item xs={12} md={6}>
+
+
+
+          {/* User Role Distribution */}
+          <Grid item xs={12}>
             <Paper 
               elevation={3}
               sx={{ 
@@ -978,107 +1395,168 @@ const DashboardContent = () => {
               }}
             >
               <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
-                Recent Device Activity
+                User Role Distribution
               </Typography>
-              <List sx={{ width: '100%', maxHeight: 300, overflow: 'auto' }}>
-                {deviceLogs.slice(0, 10).map((log) => (
-                  <ListItem key={log.log_id} alignItems="flex-start" sx={{ py: 1 }}>
-                    <ListItemAvatar>
-                      <Avatar>
-                        <DevicesIcon />
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Typography sx={{ fontSize: '1.3rem' }}>
-                            {log.devices ? log.devices.device_name : 'Unknown Device'}
-                          </Typography>
-                          <Chip 
-                            label={log.status === true ? 'SUCCESS' : 'ERROR'} 
-                            size="medium" 
-                            color={log.status === true ? 'success' : 'error'}
-                            sx={{ 
-                              fontSize: '1.4rem',
-                              fontWeight: 'bold',
-                              height: '32px',
-                              padding: '0 10px',
-                              '& .MuiChip-label': {
-                                padding: '0 8px'
-                              }
-                            }}
-                          />
-                        </Box>
-                      }
-                      secondary={
-                        <React.Fragment>
-                          <Typography
-                            sx={{ display: 'block', fontSize: '1.1rem' }}
-                            component="span"
-                            variant="body2"
-                            color="text.primary"
-                          >
-                            {log.action || 'No action'} - {log.notes || 'No additional information'}
-                          </Typography>
-                          <Typography
-                            sx={{ display: 'block', fontSize: '1rem' }}
-                            component="span"
-                            variant="body2"
-                            color="text.secondary"
-                          >
-                            User: {log.users ? `${log.users.first_name} ${log.users.last_name}` : 'Unknown User'} • {new Date(log.created_at).toLocaleString()}
-                          </Typography>
-                        </React.Fragment>
-                      }
-                      primaryTypographyProps={{ fontSize: '1.3rem' }}
-                      secondaryTypographyProps={{ fontSize: '1.1rem' }}
+              <Box sx={{ height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={roles.map(role => {
+                      const usersWithRole = users.filter(user => user.role_id === role.role_id).length;
+                      return {
+                        name: role.role_name,
+                        users: usersWithRole
+                      };
+                    })}
+                    margin={{
+                      top: 5,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" tick={{ fontSize: 14 }} />
+                    <YAxis tick={{ fontSize: 14 }} />
+                    <Tooltip 
+                      formatter={(value) => [`${value} users`, 'Count']}
+                      contentStyle={{ fontSize: '1.2rem' }}
                     />
-                  </ListItem>
-                ))}
-                {deviceLogs.length === 0 && (
-                  <ListItem>
-                    <ListItemText 
-                      primary="No recent device activity" 
-                      primaryTypographyProps={{ 
-                        fontSize: '1.3rem',
-                        textAlign: 'center',
-                        color: 'text.secondary'
-                      }} 
-                    />
-                  </ListItem>
-                )}
-              </List>
+                    <Legend wrapperStyle={{ fontSize: '1.2rem' }} />
+                    <Bar dataKey="users" fill="#8884d8" name="Users" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
             </Paper>
           </Grid>
-        </Grid> */}
+        </Grid>
 
 
+      {/* Role-to-Device Distribution */}
+      <Grid item xs={12}>
+        <Paper 
+          elevation={3}
+          sx={{ 
+            p: 2, 
+            height: '100%',
+            borderRadius: 2,
+            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
+            Role-to-Device Distribution
+          </Typography>
+          <Box sx={{ height: 400 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={roles.map(role => {
+                  // Find devices assigned to this role
+                  const roleDevices = roleToDeviceData
+                    .filter(rtd => rtd.role_id === role.role_id)
+                    .map(rtd => rtd.device_id);
+                  
+                  // Count devices by type/category if needed
+                  const deviceCount = roleDevices.length;
+                  
+                  return {
+                    name: role.role_name,
+                    devices: deviceCount,
+                    // You could add more specific device types here if needed
+                  };
+                })}
+                margin={{
+                  top: 5,
+                  right: 30,
+                  left: 20,
+                  bottom: 5,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" tick={{ fontSize: 14 }} />
+                <YAxis tick={{ fontSize: 14 }} />
+                <Tooltip 
+                  formatter={(value) => [`${value} devices`, 'Count']}
+                  contentStyle={{ fontSize: '1.2rem' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '1.2rem' }} />
+                <Bar dataKey="devices" fill="#8884d8" name="Devices" />
+              </BarChart>
+            </ResponsiveContainer>
+          </Box>
+        </Paper>
+      </Grid>
 
 
-
-
-        {/* User Role Distribution */}
-        <Grid item xs={12}>
-          <Paper 
-            elevation={3}
-            sx={{ 
-              p: 2, 
-              height: '100%',
-              borderRadius: 2,
-              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
-            }}
-          >
-            <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
-              User Role Distribution
+      {/* Role-Device Relationship */}
+      <Grid item xs={12}>
+        <Paper 
+          elevation={3}
+          sx={{ 
+            p: 2, 
+            height: '100%',
+            borderRadius: 2,
+            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
+          }}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
+              Role-Device Relationship
             </Typography>
-            <Box sx={{ height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
+            <FormControl sx={{ minWidth: 200 }}>
+              <Select
+                value={selectedRole || ''}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                displayEmpty
+                sx={{ fontSize: '1.2rem' }}
+              >
+                <MenuItem value="" sx={{ fontSize: '1.2rem' }}>All Roles</MenuItem>
+                {roles.map((role) => (
+                  <MenuItem key={role.role_id} value={role.role_id} sx={{ fontSize: '1.2rem' }}>
+                    {role.role_name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+          <Box sx={{ height: 400 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              {selectedRole ? (
+                // Show devices for selected role
+                <BarChart
+                  data={devices
+                    .filter(device => {
+                      const isAssigned = roleToDeviceData.some(
+                        rtd => rtd.role_id === selectedRole && rtd.device_id === device.device_id
+                      );
+                      return isAssigned;
+                    })
+                    .map(device => ({
+                      name: device.device_name,
+                      value: 1, // Just to show it's assigned
+                    }))}
+                  margin={{
+                    top: 5,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 14 }} />
+                  <YAxis tick={{ fontSize: 14 }} />
+                  <Tooltip contentStyle={{ fontSize: '1.2rem' }} />
+                  <Bar dataKey="value" fill="#8884d8" name="Assigned to Role" />
+                </BarChart>
+              ) : (
+                // Show all roles and their device counts
                 <BarChart
                   data={roles.map(role => {
-                    const usersWithRole = users.filter(user => user.role_id === role.role_id).length;
+                    const deviceCount = roleToDeviceData
+                      .filter(rtd => rtd.role_id === role.role_id)
+                      .length;
+                    
                     return {
                       name: role.role_name,
-                      users: usersWithRole
+                      devices: deviceCount,
                     };
                   })}
                   margin={{
@@ -1092,17 +1570,36 @@ const DashboardContent = () => {
                   <XAxis dataKey="name" tick={{ fontSize: 14 }} />
                   <YAxis tick={{ fontSize: 14 }} />
                   <Tooltip 
-                    formatter={(value) => [`${value} users`, 'Count']}
+                    formatter={(value) => [`${value} devices`, 'Count']}
                     contentStyle={{ fontSize: '1.2rem' }}
                   />
                   <Legend wrapperStyle={{ fontSize: '1.2rem' }} />
-                  <Bar dataKey="users" fill="#8884d8" name="Users" />
+                  <Bar dataKey="devices" fill="#8884d8" name="Devices" />
                 </BarChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>
-        </Grid>
+              )}
+            </ResponsiveContainer>
+          </Box>
+        </Paper>
       </Grid>
+
+
+
+      {/* Charts and Recent Activity */}
+      {/* <Grid container spacing={3} sx={{ mt: 1 }}> */}
+        {/* Your existing charts */}
+        {/* ...
+      </Grid> */}
+
+      {/* Access Trends Over Time */}
+      {/* <Grid container spacing={3} sx={{ mt: 1 }}>
+        <Grid item xs={12}> */}
+          {/* Access Trends chart component from Step 2 */}
+        {/* </Grid>
+      </Grid> */}
+
+
+
+
 
       
     </Box>
