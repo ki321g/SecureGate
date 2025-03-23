@@ -151,7 +151,7 @@ const UsersContent = () => {
       },
       {
         accessorKey: 'first_name',
-        header: 'FName',
+        header: 'First Name',
         enableClickToCopy: true,
         size: 30,
         Cell: ({ cell }) => (
@@ -162,7 +162,7 @@ const UsersContent = () => {
       },
       {
         accessorKey: 'last_name',
-        header: 'LName',
+        header: 'Last Name',
         enableClickToCopy: true,
         size: 30,
         Cell: ({ cell }) => (
@@ -1033,7 +1033,7 @@ const UsersContent = () => {
             onClick={handleAdd}
             sx={{ fontSize: '1.6rem', py: 1, px: 2 }} // Larger button
           >
-            Add Device
+            Add User
           </Button>
         </Box>
       </Box>

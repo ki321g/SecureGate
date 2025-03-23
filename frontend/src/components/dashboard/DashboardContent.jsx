@@ -1000,7 +1000,7 @@ const DashboardContent = () => {
               {deviceLogs.slice(0, 10).map((log) => (
                 <ListItem key={log.log_id} alignItems="flex-start" sx={{ py: 1 }}>
                   <ListItemAvatar>
-                    <Avatar>
+                    <Avatar sx={{ bgcolor: 'warning.main', mr: 2 }}>
                       <ImportantDevicesIcon />
                     </Avatar>
                   </ListItemAvatar>

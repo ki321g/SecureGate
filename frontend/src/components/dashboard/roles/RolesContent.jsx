@@ -653,7 +653,7 @@ const RolesContent = () => {
             onClick={handleAdd}
             sx={{ fontSize: '1.6rem', py: 1, px: 2 }} // Larger button
           >
-            Add Device
+            Add Role
           </Button>
         </Box>
       </Box>
