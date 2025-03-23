@@ -14,7 +14,10 @@ import {
   ListItem,
   ListItemText,
   ListItemAvatar,
-  Chip
+  Chip,
+  FormControl, 
+  Select, 
+  MenuItem
 } from '@mui/material';
 
 // Icons
@@ -44,7 +47,7 @@ import {
 import { useData } from '../../contexts/dataContext';
 
 // API
-import { usersApi, rolesApi, devicesApi, accessLogsApi } from '../../api/supabase/supabaseApi';
+import { usersApi, rolesApi, devicesApi, accessLogsApi, deviceLogsApi } from '../../api/supabase/supabaseApi';
 
 // Import default user image
 import { defaultUserImage } from './users/defaultUserImage';
@@ -54,9 +57,13 @@ const DashboardContent = () => {
   const { users, setUsers } = useData();
   const { roles, setRoles } = useData();
   const { devices, setDevices } = useData();
-  
+  const [deviceLogs, setDeviceLogs] = useState([]);
   const [accessLogs, setAccessLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedDevice, setSelectedDevice] = useState('');
+  const [selectedUser, setSelectedUser] = useState('');
+
+
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalRoles: 0,
@@ -137,6 +144,34 @@ const DashboardContent = () => {
     };
   }, [setAccessLogs]);
 
+  // Fetch device logs data
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchDeviceLogsData = async () => {
+      try {
+        const { data, error } = await deviceLogsApi.getAll();
+        
+        if (error) throw error;
+        
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setDeviceLogs(data);
+        }
+      } catch (error) {
+        console.error('Error fetching DEVICE LOGS data:', error.message);
+      }
+    };
+    
+    fetchDeviceLogsData();
+    
+    // Cleanup function to prevent state updates after unmounting
+    return () => {
+      isMounted = false;
+    };
+  }, [setDeviceLogs]);
+
+
   // Calculate statistics
   useEffect(() => {
     if (users && roles && devices && accessLogs) {
@@ -144,10 +179,10 @@ const DashboardContent = () => {
       const granted = accessLogs.filter(log => log.success).length;
       const denied = accessLogs.filter(log => !log.success).length;
       
-      // Get recent logs (last 5)
+      // Get recent logs (last 10)
       const recent = [...accessLogs]
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-        .slice(0, 5);
+        .slice(0, 10);
       
       setStats({
         totalUsers: users.length,
@@ -310,30 +345,30 @@ const DashboardContent = () => {
               <Chip 
                 icon={<CheckCircleIcon />} 
                 label={`${stats.accessGranted} Granted`} 
-                size="medium" // Changed from "small" to "medium"
+                size="medium" 
                 color="success"
                 sx={{ 
-                  fontSize: '1.2rem', // Increased font size
-                  flexGrow: 1, // This makes the chip take up available space
-                  justifyContent: 'flex-start', // Aligns content to the left
-                  height: '36px', // Increased height
+                  fontSize: '1.2rem', 
+                  flexGrow: 1,
+                  justifyContent: 'flex-start', 
+                  height: '36px', 
                   '& .MuiChip-icon': {
-                    fontSize: '1.4rem' // Larger icon
+                    fontSize: '1.4rem'
                   }
                 }}
               />
               <Chip 
                 icon={<CancelIcon />} 
                 label={`${stats.accessDenied} Denied`} 
-                size="medium" // Changed from "small" to "medium"
+                size="medium" 
                 color="error"
                 sx={{ 
-                  fontSize: '1.2rem', // Increased font size
-                  flexGrow: 1, // This makes the chip take up available space
-                  justifyContent: 'flex-start', // Aligns content to the left
-                  height: '36px', // Increased height
+                  fontSize: '1.2rem', 
+                  flexGrow: 1, 
+                  justifyContent: 'flex-start', 
+                  height: '36px', 
                   '& .MuiChip-icon': {
-                    fontSize: '1.4rem' // Larger icon
+                    fontSize: '1.4rem' 
                   }
                 }}
               />
@@ -355,7 +390,7 @@ const DashboardContent = () => {
             }}
           >
             <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
-              System Status Summary
+              System Summary
             </Typography>
             <Grid container spacing={2}>
               <Grid item xs={12} md={4}>
@@ -457,14 +492,56 @@ const DashboardContent = () => {
               backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
             }}
           >
-            <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
-              Access Statistics
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
+                Lab Access Statistics
+              </Typography>
+              <FormControl sx={{ minWidth: 150 }}>
+                <Select
+                  value={selectedUser || ''}
+                  onChange={(e) => setSelectedUser(e.target.value)}
+                  displayEmpty
+                  sx={{ fontSize: '1.2rem' }}
+                >
+                  <MenuItem value="" sx={{ fontSize: '1.2rem' }}>All Users</MenuItem>
+                  {accessLogs
+                    .reduce((users, log) => {
+                      const userName = log.users ? `${log.users.first_name} ${log.users.last_name}` : null;
+                      const userId = log.user_id;
+                      if (userName && userId && !users.some(user => user.id === userId)) {
+                        users.push({ id: userId, name: userName });
+                      }
+                      return users;
+                    }, [])
+                    .map((user) => (
+                      <MenuItem key={user.id} value={user.id} sx={{ fontSize: '1.2rem' }}>
+                        {user.name}
+                      </MenuItem>
+                    ))
+                  }
+                </Select>
+              </FormControl>
+            </Box>
             <Box sx={{ height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={accessChartData}
+                    data={accessLogs
+                      .filter(log => !selectedUser || log.user_id === selectedUser)
+                      .reduce((acc, log) => {
+                        const granted = acc.find(item => item.name === 'Granted');
+                        const denied = acc.find(item => item.name === 'Denied');
+                        
+                        if (log.success) {
+                          if (granted) granted.value += 1;
+                          else acc.push({ name: 'Granted', value: 1 });
+                            } else {
+                          if (denied) denied.value += 1;
+                          else acc.push({ name: 'Denied', value: 1 });
+                        }
+                        return acc;
+                      }, [])
+                    }
                     cx="50%"
                     cy="50%"
                     labelLine={false}
@@ -473,8 +550,11 @@ const DashboardContent = () => {
                     dataKey="value"
                     label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                   >
-                    {accessChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    {[
+                      { name: 'Granted', color: '#4caf50' },
+                      { name: 'Denied', color: '#f44336' }
+                    ].map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value) => [`${value} attempts`, 'Count']} />
@@ -483,7 +563,7 @@ const DashboardContent = () => {
               </ResponsiveContainer>
             </Box>
           </Paper>
-        </Grid>
+        </Grid> 
 
         {/* Recent Activity */}
         <Grid item xs={12} md={6}>
@@ -497,7 +577,7 @@ const DashboardContent = () => {
             }}
           >
             <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
-              Recent Access Activity
+              Recent Lab Access Activity
             </Typography>
             <List sx={{ width: '100%', maxHeight: 300, overflow: 'auto' }}>
               {stats.recentLogs.map((log) => (
@@ -516,9 +596,17 @@ const DashboardContent = () => {
                         </Typography>
                         <Chip 
                           label={log.success ? 'GRANTED' : 'DENIED'} 
-                          size="small" 
+                          size="medium" 
                           color={log.success ? 'success' : 'error'}
-                          sx={{ fontSize: '0.9rem' }}
+                          sx={{ 
+                            fontSize: '1.4rem', // Increased font size
+                            fontWeight: 'bold',
+                            height: '32px', // Increased height
+                            padding: '0 10px', // Added horizontal padding
+                            '& .MuiChip-label': {
+                              padding: '0 8px' // Increased padding around the label
+                            }
+                          }}
                         />
                       </Box>
                     }
@@ -562,6 +650,413 @@ const DashboardContent = () => {
             </List>
           </Paper>
         </Grid>
+
+
+
+        
+  {/* Device Logs Chart */}
+  <Grid item xs={12} md={6}>
+    <Paper 
+      elevation={3}
+      sx={{ 
+        p: 2, 
+        height: '100%',
+        borderRadius: 2,
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
+      }}
+    >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
+          Device Logs Statistics
+        </Typography>
+        <FormControl sx={{ minWidth: 150 }}>
+          <Select
+            value={selectedDevice || ''}
+            onChange={(e) => setSelectedDevice(e.target.value)}
+            displayEmpty
+            sx={{ fontSize: '1.2rem' }}
+          >
+            <MenuItem value="" sx={{ fontSize: '1.2rem' }}>All Devices</MenuItem>
+            {deviceLogs
+              .reduce((devices, log) => {
+                const deviceName = log.devices?.device_name;
+                if (deviceName && !devices.includes(deviceName)) {
+                  devices.push(deviceName);
+                }
+                return devices;
+              }, [])
+              .map((device) => (
+                <MenuItem key={device} value={device} sx={{ fontSize: '1.2rem' }}>
+                  {device}
+                </MenuItem>
+              ))
+            }
+          </Select>
+        </FormControl>
+      </Box>
+      <Box sx={{ height: 300 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={deviceLogs
+                .filter(log => !selectedDevice || log.devices?.device_name === selectedDevice)
+                .reduce((acc, log) => {
+                  const success = acc.find(item => item.name === 'Success');
+                  const error = acc.find(item => item.name === 'Error');
+                  
+                  if (log.status === true) {
+                    if (success) success.value += 1;
+                    else acc.push({ name: 'Success', value: 1 });
+                  } else {
+                    if (error) error.value += 1;
+                    else acc.push({ name: 'Error', value: 1 });
+                  }
+                  return acc;
+                }, [])
+              }
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              outerRadius={100}
+              fill="#8884d8"
+              dataKey="value"
+              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+            >
+              {[
+                { name: 'Success', color: '#4caf50' },
+                { name: 'Error', color: '#f44336' }
+              ].map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip formatter={(value) => [`${value} logs`, 'Count']} />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      </Box>
+    </Paper>
+  </Grid>
+
+  {/* Recent Device Activity */}
+  <Grid item xs={12} md={6}>
+    <Paper 
+      elevation={3}
+      sx={{ 
+        p: 2, 
+        height: '100%',
+        borderRadius: 2,
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
+      }}
+    >
+      <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
+        Recent Device Activity
+      </Typography>
+      <List sx={{ width: '100%', maxHeight: 300, overflow: 'auto' }}>
+        {deviceLogs.slice(0, 10).map((log) => (
+          <ListItem key={log.log_id} alignItems="flex-start" sx={{ py: 1 }}>
+            <ListItemAvatar>
+              <Avatar>
+                <DevicesIcon />
+              </Avatar>
+            </ListItemAvatar>
+            <ListItemText
+              primary={
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography sx={{ fontSize: '1.3rem' }}>
+                    {log.devices ? log.devices.device_name : 'Unknown Device'}
+                  </Typography>
+                  <Chip 
+                    label={log.status === true ? 'SUCCESS' : 'ERROR'} 
+                    size="medium" 
+                    color={log.status === true ? 'success' : 'error'}
+                    sx={{ 
+                      fontSize: '1.4rem',
+                      fontWeight: 'bold',
+                      height: '32px',
+                      padding: '0 10px',
+                      '& .MuiChip-label': {
+                        padding: '0 8px'
+                      }
+                    }}
+                  />
+                </Box>
+              }
+              secondary={
+                <React.Fragment>
+                  <Typography
+                    sx={{ display: 'block', fontSize: '1.1rem' }}
+                    component="span"
+                    variant="body2"
+                    color="text.primary"
+                  >
+                    {log.action || 'No action'} - {log.notes || 'No additional information'}
+                  </Typography>
+                  <Typography
+                    sx={{ display: 'block', fontSize: '1rem' }}
+                    component="span"
+                    variant="body2"
+                    color="text.secondary"
+                  >
+                    User: {log.users ? `${log.users.first_name} ${log.users.last_name}` : 'Unknown User'} • {new Date(log.created_at).toLocaleString()}
+                  </Typography>
+                </React.Fragment>
+              }
+              primaryTypographyProps={{ fontSize: '1.3rem' }}
+              secondaryTypographyProps={{ fontSize: '1.1rem' }}
+            />
+          </ListItem>
+        ))}
+        {deviceLogs.length === 0 && (
+          <ListItem>
+            <ListItemText 
+              primary="No recent device activity" 
+              primaryTypographyProps={{ 
+                fontSize: '1.3rem',
+                textAlign: 'center',
+                color: 'text.secondary'
+              }} 
+            />
+          </ListItem>
+        )}
+      </List>
+    </Paper>
+  </Grid>
+
+
+        {/* Device Logs Analytics */}
+        {/* <Grid container spacing={3} sx={{ mt: 1 }}> */}
+          {/* Device Logs Chart */}
+          {/* <Grid item xs={12} md={6}>
+            <Paper 
+              elevation={3}
+              sx={{ 
+                p: 2, 
+                height: '100%',
+                borderRadius: 2,
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
+              }}
+            >
+              <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
+                Device Logs Statistics
+              </Typography>
+              <Box sx={{ height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={deviceLogs.reduce((acc, log) => {
+                      // Group logs by device name
+                      const deviceName = log.devices?.device_name || 'Unknown Device';
+                      const existingDevice = acc.find(item => item.name === deviceName);
+                      
+                      if (existingDevice) {
+                        existingDevice.success += log.status === true ? 1 : 0;
+                        existingDevice.error += log.status === true ? 0 : 1;
+                      } else {
+                        acc.push({
+                          name: deviceName,
+                          success: log.status === true ? 1 : 0,
+                          error: log.status === true ? 0 : 1
+                        });
+                      }
+                      return acc;
+                    }, [])}
+                    margin={{
+                      top: 5,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" tick={{ fontSize: 14 }} />
+                    <YAxis tick={{ fontSize: 14 }} />
+                    <Tooltip 
+                      formatter={(value, name) => [`${value} logs`, name === 'success' ? 'Success' : 'Error']}
+                      contentStyle={{ fontSize: '1.2rem' }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '1.2rem' }} />
+                    <Bar dataKey="success" fill="#4caf50" name="Success" />
+                    <Bar dataKey="error" fill="#f44336" name="Error" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            </Paper>
+          </Grid> */}
+
+          {/* Device Logs Chart */}
+          {/* <Grid item xs={12} md={6}>
+            <Paper 
+              elevation={3}
+              sx={{ 
+                p: 2, 
+                height: '100%',
+                borderRadius: 2,
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" sx={{ fontSize: '1.6rem' }}>
+                  Device Logs Statistics
+                </Typography>
+                <FormControl sx={{ minWidth: 150 }}>
+                  <Select
+                    value={selectedDevice || ''}
+                    onChange={(e) => setSelectedDevice(e.target.value)}
+                    displayEmpty
+                    sx={{ fontSize: '1.2rem' }}
+                  >
+                    <MenuItem value="" sx={{ fontSize: '1.2rem' }}>All Devices</MenuItem>
+                    {deviceLogs
+                      .reduce((devices, log) => {
+                        const deviceName = log.devices?.device_name;
+                        if (deviceName && !devices.includes(deviceName)) {
+                          devices.push(deviceName);
+                        }
+                        return devices;
+                      }, [])
+                      .map((device) => (
+                        <MenuItem key={device} value={device} sx={{ fontSize: '1.2rem' }}>
+                          {device}
+                        </MenuItem>
+                      ))
+                    }
+                  </Select>
+                </FormControl>
+              </Box>
+              <Box sx={{ height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={deviceLogs
+                        .filter(log => !selectedDevice || log.devices?.device_name === selectedDevice)
+                        .reduce((acc, log) => {
+                          const success = acc.find(item => item.name === 'Success');
+                          const error = acc.find(item => item.name === 'Error');
+                          
+                          if (log.status === true) {
+                            if (success) success.value += 1;
+                            else acc.push({ name: 'Success', value: 1 });
+                          } else {
+                            if (error) error.value += 1;
+                            else acc.push({ name: 'Error', value: 1 });
+                          }
+                          return acc;
+                        }, [])
+                      }
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {[
+                        { name: 'Success', color: '#4caf50' },
+                        { name: 'Error', color: '#f44336' }
+                      ].map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [`${value} logs`, 'Count']} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Box>
+            </Paper>
+          </Grid> */}
+
+
+          {/* Recent Device Activity */}
+          {/* <Grid item xs={12} md={6}>
+            <Paper 
+              elevation={3}
+              sx={{ 
+                p: 2, 
+                height: '100%',
+                borderRadius: 2,
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.8)'
+              }}
+            >
+              <Typography variant="h6" sx={{ mb: 2, fontSize: '1.6rem' }}>
+                Recent Device Activity
+              </Typography>
+              <List sx={{ width: '100%', maxHeight: 300, overflow: 'auto' }}>
+                {deviceLogs.slice(0, 10).map((log) => (
+                  <ListItem key={log.log_id} alignItems="flex-start" sx={{ py: 1 }}>
+                    <ListItemAvatar>
+                      <Avatar>
+                        <DevicesIcon />
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography sx={{ fontSize: '1.3rem' }}>
+                            {log.devices ? log.devices.device_name : 'Unknown Device'}
+                          </Typography>
+                          <Chip 
+                            label={log.status === true ? 'SUCCESS' : 'ERROR'} 
+                            size="medium" 
+                            color={log.status === true ? 'success' : 'error'}
+                            sx={{ 
+                              fontSize: '1.4rem',
+                              fontWeight: 'bold',
+                              height: '32px',
+                              padding: '0 10px',
+                              '& .MuiChip-label': {
+                                padding: '0 8px'
+                              }
+                            }}
+                          />
+                        </Box>
+                      }
+                      secondary={
+                        <React.Fragment>
+                          <Typography
+                            sx={{ display: 'block', fontSize: '1.1rem' }}
+                            component="span"
+                            variant="body2"
+                            color="text.primary"
+                          >
+                            {log.action || 'No action'} - {log.notes || 'No additional information'}
+                          </Typography>
+                          <Typography
+                            sx={{ display: 'block', fontSize: '1rem' }}
+                            component="span"
+                            variant="body2"
+                            color="text.secondary"
+                          >
+                            User: {log.users ? `${log.users.first_name} ${log.users.last_name}` : 'Unknown User'} • {new Date(log.created_at).toLocaleString()}
+                          </Typography>
+                        </React.Fragment>
+                      }
+                      primaryTypographyProps={{ fontSize: '1.3rem' }}
+                      secondaryTypographyProps={{ fontSize: '1.1rem' }}
+                    />
+                  </ListItem>
+                ))}
+                {deviceLogs.length === 0 && (
+                  <ListItem>
+                    <ListItemText 
+                      primary="No recent device activity" 
+                      primaryTypographyProps={{ 
+                        fontSize: '1.3rem',
+                        textAlign: 'center',
+                        color: 'text.secondary'
+                      }} 
+                    />
+                  </ListItem>
+                )}
+              </List>
+            </Paper>
+          </Grid>
+        </Grid> */}
+
+
+
+
+
+
         {/* User Role Distribution */}
         <Grid item xs={12}>
           <Paper 
