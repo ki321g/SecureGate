@@ -132,7 +132,7 @@ return (
                     disableUnderline
                     disabled
                     // value={user.card_id || 'No Card ID'}
-                    value={cardUID === 'noCardUID' ? 'No Card ID' : cardUID}
+                    value={cardUID === 'noCardUID' ? 'No Card ID' : (cardUID || 'No Card ID')}
                     sx={styles.input}
                 />
             </Box>

@@ -13,17 +13,22 @@ import WarningIcon from '@mui/icons-material/Warning';
 const API_KEY = import.meta.env.VITE_BACKEND_API_KEY;
 const API_BASE_URL = import.meta.env.VITE_BACKEND_API_BASE_URL;
 const COUNT_DOWN = import.meta.env.VITE_FAILED_COUNT_DOWN
+// const MAX_ATTEMPTS = import.meta.env.VITE_MAX_ATTEMPTS;
 
 // Context
 import { cardUidContext } from '../contexts/cardUidContext'
 import { userContext } from '../contexts/userContext'
 
+// API
+import { failedAttemptsApi } from '../api/supabase/supabaseApi'
+
+const MAX_ATTEMPTS = 3;
 const styles = {
     contentWrapper: {
         width: '90%',
         height: '91.5%',
         backgroundColor: '#f5f5f5',
-        padding: '24px',
+        padding: '25px',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
         background: 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)',
     },
@@ -82,32 +87,55 @@ const styles = {
     }
 };
 
-const MAX_ATTEMPTS = 3;
-
-const FailedUserRecognitionComponent = ({ setActiveComponent }) => {
+// const FailedUserRecognitionComponent = ({ setActiveComponent }) => {
+const FailedUserRecognitionComponent = ({ setActiveComponent, setShowFaceDector }) => {
+  
     const { cardUID, setCardUID } = useContext(cardUidContext)
     const { user, setUser } = useContext(userContext)
     const [attempts, setAttempts] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [countdown, setCountdown] = useState(COUNT_DOWN);
+    const [expanded, setExpanded] = useState(false);
+  
+    // Animation effect when component mounts
+    useEffect(() => {
+      // Trigger expansion after a small delay
+      const expandTimer = setTimeout(() => {
+        setExpanded(true);
+        
+        // Shrink back after 2 seconds
+        const shrinkTimer = setTimeout(() => {
+          setExpanded(false);
+        }, 2000);
+        
+        return () => clearTimeout(shrinkTimer);
+      }, 300);
+      
+      return () => clearTimeout(expandTimer);
+    }, []);
 
     // Countdown timer effect
     useEffect(() => {
         let timer;
+        
         if (countdown > 0) {
             timer = setTimeout(() => {
                 setCountdown(countdown - 1);
             }, 1000);
         } else if (countdown === 0) {
-            // Show the scan card component after countdown           
-            // change when i have DB setup
-            // setActiveComponent('scanCard');
-            if (attempts === MAX_ATTEMPTS) {
-                handleTryAgain();
-            } else {
-                setActiveComponent('scanCard');
-            }
+            // Show the scan card component after countdown
+            
+            // Turn off face detector
+            setShowFaceDector(false);
+            // Navigate back to scan card
+            setActiveComponent('scanCard');
+
+            // if (attempts === MAX_ATTEMPTS) {
+            //     handleTryAgain();
+            // } else {
+            //     setActiveComponent('scanCard');
+            // }
         }
         
         return () => {
@@ -119,16 +147,24 @@ const FailedUserRecognitionComponent = ({ setActiveComponent }) => {
     useEffect(() => {
         const fetchAttempts = async () => {
             try {
-                const response = await axios.get(`${API_BASE_URL}/facial-recognition/attempts`, {
-                    headers: {
-                        'X-API-Key': API_KEY
+                // Assuming user is available from context
+                if (user && user.uid) {
+                    // Use failedAttemptsApi.getByUserId to fetch the user's attempts
+                    const { data, error } = await failedAttemptsApi.getByUserId(user.uid);
+                    
+                    if (error) {
+                        // If no record found, it's not really an error for our purposes
+                        if (error.code === 'PGRST116') {
+                            setAttempts(0); // No attempts recorded yet
+                        } else {
+                            throw error;
+                        }
+                    } else if (data) {
+                        // Set attempts from the fetched data
+                        setAttempts(data.failed);
                     }
-                });
-                
-                if (response.data.status === 'success') {
-                    setAttempts(response.data.attempts);
                 } else {
-                    setError(response.data.message);
+                    setError('No user found to fetch attempts');
                 }
             } catch (err) {
                 setError('Failed to fetch recognition attempts');
@@ -137,32 +173,29 @@ const FailedUserRecognitionComponent = ({ setActiveComponent }) => {
                 setLoading(false);
             }
         };
-        
         fetchAttempts();
-    }, []);
+    }, [user]);
 
     // Increment attempts when component mounts
     useEffect(() => {
         const incrementAttempts = async () => {
             if (attempts < MAX_ATTEMPTS) {
                 try {
-                    const newAttempts = attempts + 1;
-                    setAttempts(newAttempts); // Update local state immediately for UI
-
-                    // Update the server
-                    const response = await axios.post(
-                        `${API_BASE_URL}/facial-recognition/attempts`,
-                        { attempts: newAttempts },
-                        {
-                            headers: {
-                                'X-API-Key': API_KEY,
-                                'Content-Type': 'application/json'
-                            }
+                    // Assuming user is available from context
+                    if (user && user.uid) {
+                        // Use failedAttemptsApi.incrementFailedAttempts to increment attempts
+                        const { data, error } = await failedAttemptsApi.incrementFailedAttempts(user.uid);
+                        
+                        if (error) {
+                            throw error;
                         }
-                    );
-                    
-                    if (response.data.status !== 'success') {
-                        console.error('Failed to update attempts on server');
+                        
+                        // Update local state with the new attempts count from the response
+                        if (data && data.length > 0) {
+                            setAttempts(data[0].failed);
+                        }
+                    } else {
+                        console.error('No user found to increment attempts');
                     }
                 } catch (err) {
                     console.error('Error updating attempts:', err);
@@ -173,23 +206,10 @@ const FailedUserRecognitionComponent = ({ setActiveComponent }) => {
         if (!loading && !error) {
             incrementAttempts();
         }
-    }, [loading, error]);
+    }, [loading, error, user]);
 
     const handleTryAgain = async () => {
         try {
-            if (attempts >= MAX_ATTEMPTS) {
-                // Reset attempts if max reached
-                await axios.post(
-                    `${API_BASE_URL}/facial-recognition/attempts`,
-                    { attempts: 0 },
-                    {
-                        headers: {
-                            'X-API-Key': API_KEY,
-                            'Content-Type': 'application/json'
-                        }
-                    }
-                );
-            }
             // Navigate back to scan card
             setActiveComponent('scanCard');
         } catch (err) {
@@ -280,27 +300,51 @@ const FailedUserRecognitionComponent = ({ setActiveComponent }) => {
                 {/* Show Try Again button if attempts are less than MAX_ATTEMPTS */}
                 {attempts === MAX_ATTEMPTS ? (                    
                     // Show ACCOUNT LOCKED message when MAX_ATTEMPTS is reached
+                    // <Box sx={{
+                    //     padding: '16px 24px',
+                    //     backgroundColor: '#ffebee',
+                    //     border: '2px solid #d32f2f',
+                    //     borderRadius: '4px',
+                    //     textAlign: 'center'
+                    // }}>
+                    //     <Typography 
+                    //         variant="h4" 
+                    //         sx={{ 
+                    //             fontWeight: 'bold', 
+                    //             color: '#d32f2f',
+                    //             fontSize: '2rem'
+                    //         }}
+                    //     >
+                    //         ACCOUNT LOCKED
+                    //     </Typography>
+                    //     <Typography sx={{ color: '#d32f2f', mt: 1 }}>
+                    //         Please contact an administrator
+                    //     </Typography>
+                    // </Box>
                     <Box sx={{
                         padding: '16px 24px',
                         backgroundColor: '#ffebee',
                         border: '2px solid #d32f2f',
                         borderRadius: '4px',
-                        textAlign: 'center'
-                    }}>
+                        textAlign: 'center',
+                        transform: expanded ? 'scale(3.4)' : 'scale(1)',
+                        transition: 'transform 1s ease-in-out',
+                        boxShadow: expanded ? '0 0 15px rgba(211, 47, 47, 0.5)' : 'none',
+                      }}>
                         <Typography 
-                            variant="h4" 
-                            sx={{ 
-                                fontWeight: 'bold', 
-                                color: '#d32f2f',
-                                fontSize: '2rem'
-                            }}
+                          variant="h4" 
+                          sx={{ 
+                            fontWeight: 'bold', 
+                            color: '#d32f2f',
+                            fontSize: '2rem'
+                          }}
                         >
-                            ACCOUNT LOCKED
+                          ACCOUNT LOCKED
                         </Typography>
                         <Typography sx={{ color: '#d32f2f', mt: 1 }}>
-                            Please contact an administrator
+                          Please contact an administrator
                         </Typography>
-                    </Box>
+                      </Box>
                 ) : (
                     <Box sx={styles.buttonContainer}>
                         <Button 

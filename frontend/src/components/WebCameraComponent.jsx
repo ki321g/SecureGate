@@ -145,15 +145,30 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
         // Clear the canvas if it exists
         if (canvasRef.current) {
             const ctx = canvasRef.current.getContext('2d');
+            // Clear the entire canvas with proper dimensions
             ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            
+            // Force a reset of the canvas by resetting its dimensions
+            canvasRef.current.width = 1;
+            canvasRef.current.height = 1;
+            setTimeout(() => {
+                if (canvasRef.current) {
+                    canvasRef.current.width = videoWidth;
+                    canvasRef.current.height = videoHeight;
+                }
+            }, 50);
         }
+        // if (canvasRef.current) {
+        //     const ctx = canvasRef.current.getContext('2d');
+        //     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        // }
         
         // Reset the status
         setStatus({ text: 'DETECTING FACE', color: '#3498db' });
     };
     
     
-    // Add a useEffect that runs on component mount to reset everything
+    // useEffect that runs on component mount to reset everything
     useEffect(() => {
         resetComponent();
         
@@ -246,12 +261,12 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
         let isMounted = true;
         let animationFrame;
         let localHasCaptured = hasCapturedImage; // Create a local variable
-
-
+    
         const detectFace = async () => {
             if (!isMounted) return;
-
-            if (enableDetectFace && webcamRef.current?.video) {
+    
+            // Add a check to ensure faceDetector is not null
+            if (enableDetectFace && webcamRef.current?.video && faceDetector) {
                 const video = webcamRef.current.video;
                 const results = faceDetector.detectForVideo(video, performance.now());
                 if (results.detections.length > 0) {
@@ -263,30 +278,77 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
                         localHasCaptured = true; // Set local variable to true
                         setHasCapturedImage(true);
                         await verify(imageSrc);
-                        // downloadBase64File(imageSrc, 'txt'); 
                     };
                     setDetectingFace(false); // Stop showing "Face Not Detected"
                 } else {
                     setFaceDetected(false);
                 }
             }
-            if (enableDetectFace && isMounted) {
+            
+            // Only request animation frame if detector is initialized
+            if (enableDetectFace && isMounted && faceDetector) {
                 animationFrame = requestAnimationFrame(detectFace);
             }
         };
-
-        // Initial detection start after card is read
-        if (enableDetectFace && webcamRef.current?.video) {
+    
+        // Initial detection start after card is read - only if detector is initialized
+        if (enableDetectFace && webcamRef.current?.video && faceDetector) {
           detectFace();
         }
-
+    
         return () => {
             isMounted = false;
             if (animationFrame) {
                 cancelAnimationFrame(animationFrame);
             }
         };
-    }, [faceDetector, enableDetectFace, hasCapturedImage, imgSrc]); // Triggered when faceDetector enableDetectFace or hasCapturedImage changes
+    }, [faceDetector, enableDetectFace, hasCapturedImage, imgSrc]);
+    
+    // useEffect(() => {
+    //     let isMounted = true;
+    //     let animationFrame;
+    //     let localHasCaptured = hasCapturedImage; // Create a local variable
+
+
+    //     const detectFace = async () => {
+    //         if (!isMounted) return;
+
+    //         if (enableDetectFace && webcamRef.current?.video) {
+    //             const video = webcamRef.current.video;
+    //             const results = faceDetector.detectForVideo(video, performance.now());
+    //             if (results.detections.length > 0) {
+    //                 setFaceDetected(true);
+    //                 // Only capture and download if we haven't already done so
+    //                 if (!localHasCaptured) {
+    //                     const imageSrc = webcamRef.current.getScreenshot();
+    //                     setImgSrc(imageSrc);
+    //                     localHasCaptured = true; // Set local variable to true
+    //                     setHasCapturedImage(true);
+    //                     await verify(imageSrc);
+    //                     // downloadBase64File(imageSrc, 'txt'); 
+    //                 };
+    //                 setDetectingFace(false); // Stop showing "Face Not Detected"
+    //             } else {
+    //                 setFaceDetected(false);
+    //             }
+    //         }
+    //         if (enableDetectFace && isMounted) {
+    //             animationFrame = requestAnimationFrame(detectFace);
+    //         }
+    //     };
+
+    //     // Initial detection start after card is read
+    //     if (enableDetectFace && webcamRef.current?.video) {
+    //       detectFace();
+    //     }
+
+    //     return () => {
+    //         isMounted = false;
+    //         if (animationFrame) {
+    //             cancelAnimationFrame(animationFrame);
+    //         }
+    //     };
+    // }, [faceDetector, enableDetectFace, hasCapturedImage, imgSrc]); // Triggered when faceDetector enableDetectFace or hasCapturedImage changes
 
     /* --- 4. Start Landmark Drawing Loop (Conditional) --- */
     useEffect(() => {
@@ -441,7 +503,7 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
 
     /* --- Draw Face Landmark Results Function --- */
     const drawResults = (ctx, results) => {
-        if (!results.faceLandmarks) return; // Only draw if landmarks exist
+        if (!results.faceLandmarks|| !isVisable) return; // Only draw if landmarks exist
 
         ctx.save();
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);

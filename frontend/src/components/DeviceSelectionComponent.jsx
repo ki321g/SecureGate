@@ -26,11 +26,14 @@ import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import { useUser } from '../contexts/userContext';
 import { useData } from '../contexts/dataContext';
 
+// API
+import { functionApi, failedAttemptsApi } from '../api/supabase/supabaseApi'
+
 // API key and base URL from environment variables
 const API_KEY = import.meta.env.VITE_BACKEND_API_KEY;
 const API_BASE_URL = import.meta.env.VITE_BACKEND_API_BASE_URL;
 const TINYTUYA_API_BASE_URL = import.meta.env.VITE_TINYTUYA_API_BASE_URL;
-import { functionApi } from '../api/supabase/supabaseApi'
+
 
 const styles = {
   contentWrapper: {
@@ -131,7 +134,8 @@ const DeviceSelectionComponent = () => {
     const initializeComponent = async () => {
       try {
         // Reset facial recognition attempts
-        await resetFacialRecognitionAttemptsCount();
+        await deleteFailedAttemptsInDatabase(user.uid);
+        // await resetFacialRecognitionAttemptsCount();
         
         // Fetch user devices
         const deviceData = await fetchUserDevices();
@@ -153,27 +157,43 @@ const DeviceSelectionComponent = () => {
 
     initializeComponent();
   }, [user.uid]); // Only run when user ID changes
-  
-    const resetFacialRecognitionAttemptsCount = async () => {
+
+  // function to delete failed attempts in the database
+  const deleteFailedAttemptsInDatabase = async () => {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/facial-recognition/attempts`,
-        { attempts: 0 },
-        {
-          headers: {
-            'X-API-Key': API_KEY,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const { error } = await failedAttemptsApi.delete(user.uid);
       
-      console.log('Count reset successfully:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Failed to reset count:', error);
+      if (error) {
+        console.error('Error deleting failed attempts:', error);
+      } else {
+        console.log('Failed attempts record deleted successfully');
+      }
+    } catch (err) {
+      console.error('Failed to delete failed attempts record:', err);
       // Don't throw here as this isn't critical for the component to function
     }
   };
+  
+  //   const resetFacialRecognitionAttemptsCount = async () => {
+  //   try {
+  //     const response = await axios.post(
+  //       `${API_BASE_URL}/facial-recognition/attempts`,
+  //       { attempts: 0 },
+  //       {
+  //         headers: {
+  //           'X-API-Key': API_KEY,
+  //           'Content-Type': 'application/json'
+  //         }
+  //       }
+  //     );
+      
+  //     console.log('Count reset successfully:', response.data);
+  //     return response.data;
+  //   } catch (error) {
+  //     console.error('Failed to reset count:', error);
+  //     // Don't throw here as this isn't critical for the component to function
+  //   }
+  // };
 
   const fetchUserDevices = async () => {
     try {
@@ -448,6 +468,47 @@ const DeviceSelectionComponent = () => {
                   {devices.length > 0 ? (
                     [...devices]
                       .sort((a, b) => a.device_name.localeCompare(b.device_name))
+                      .map((device, index) => (
+                        <Box id='InnerDeviceBoxContainer'
+                          key={`${device.deviceid}-${index}`}  // Add index to ensure uniqueness
+                          sx={{
+                            ...styles.deviceItem,
+                            ...(selectedDevices.includes(device.deviceid) ? styles.selectedDeviceItem : {})
+                          }}
+                        >
+                          <FormControlLabel
+                            control={
+                              <Checkbox 
+                                checked={selectedDevices.includes(device.deviceid)}
+                                onChange={() => toggleDeviceSelection(device.deviceid)}
+                              />
+                            }
+                            label={
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                                <Typography variant="h1" sx={{ fontSize: '1.8rem' }}>{device.device_name}</Typography>
+                                {deviceStatus[device.deviceid] && (
+                                  <Chip 
+                                    size="medium" 
+                                    label={deviceStatus[device.deviceid]} 
+                                    color={getStatusColor(deviceStatus[device.deviceid])}
+                                    sx={{ ml: 3, borderRadius: '8px', fontWeight: 'bold', fontSize: '1.2rem', padding: '10px', height: '40px' }}
+                                  />
+                                )}
+                              </Box>
+                            }
+                            sx={{ width: '100%' }}
+                          />
+                        </Box>
+                      ))
+                  ) : (
+                    <Typography sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>
+                      No devices available
+                    </Typography>
+                  )}
+
+                  {/* {devices.length > 0 ? (
+                    [...devices]
+                      .sort((a, b) => a.device_name.localeCompare(b.device_name))
                       .map((device) => (
                         <Box id='InnerDeviceBoxContainer'
                           key={device.deviceid}
@@ -484,7 +545,7 @@ const DeviceSelectionComponent = () => {
                     <Typography sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>
                       No devices available
                     </Typography>
-                  )}
+                  )} */}
                 </FormGroup>
               )}
             </Box>

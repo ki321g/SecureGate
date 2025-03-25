@@ -247,7 +247,10 @@ This way, the component will reset whenever it becomes visible or when face dete
                                 <UserRecognitionComponent setActiveComponent={ setActiveComponent } status={ status }/>
                             }
                             {activeComponent === 'failedUserRecognition' && 
-                                <FailedUserRecognitionComponent setActiveComponent={ setActiveComponent }/>
+                                <FailedUserRecognitionComponent 
+                                    setActiveComponent={ setActiveComponent }
+                                    setShowFaceDector={setShowFaceDector}
+                                />
                             }
                             {activeComponent === 'deviceSelection' && 
                                 <DeviceSelectionComponent setActiveComponent={ setActiveComponent }/>
