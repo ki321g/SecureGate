@@ -92,6 +92,11 @@ const styles = {
         fontSize: '60px',
         fontWeight: 'bold',
     },
+    pulsingText: {
+        mt: 2,
+        color: 'text.secondary',
+        animation: 'pulse 2s infinite'
+      }
   }
 
 const HomePage = () => {
@@ -104,72 +109,58 @@ const HomePage = () => {
     const [ showFaceDector, setShowFaceDector ] = useState(false);
     const [ enableDetectFace, setEnableDetectFace ] = useState(false);
     const [recognitionAttempts, setRecognitionAttempts] = useState(0);
-    // const [ activeComponent, setActiveComponent ] = useState('deviceSelection');
     const [ activeComponent, setActiveComponent ] = useState('scanCard');
+    const [resetKey, setResetKey] = useState(0);
     const [status, setStatus] = useState({
         text: 'DETECTING FACE',
         color: '#4CAF50'
     });
-    
-    // useEffect(() => {
 
-    //     const fetchRolesData = async () => {
-    //         try {
-    //                 const { data, error } = await rolesApi.getAll();
-                
-    //                 if (error) throw error;
-    //                 setRoles(data);
-    //                 console.log('ROLES:', data);
-    //         } catch (error) {
-    //             console.error('Error fetching ROLES data:', error.message);
-    //         }
-    //     };
-
-    //     const fetchDevicesData = async () => {
-    //         try {
-    //             const { data, error } = await devicesApi.getAll();
-                
-    //             if (error) throw error;
-    //             setDevices(data);
-    //             console.log('DEVICES:', data);
-
-    //         } catch (error) {
-    //             console.error('Error fetching DEVICES data:', error.message);
-    //         }
-    //     };
-
-    //     const fetchRolesToDevicesData = async () => {
-    //         try {
-    //             const { data, error } = await roleToDeviceApi.getAll();
-                
-    //             if (error) throw error;
-    //             setRolesToDevices(data); 
-    //             console.log('RoleToDevices:', data);
-
-    //         } catch (error) {
-    //             console.error('Error fetching RolesToDevices data:', error.message);
-    //         }
-    //     };
-    //         //devicesApi, roleToDeviceApi roleToDevices
-    //     fetchRolesData();
-    //     fetchDevicesData();
-    //     fetchRolesToDevicesData();
-    // }, []);
+    // Call this function when you want to reset the WebCameraComponent
+const resetWebcamComponent = () => {
+    setResetKey(prevKey => prevKey + 1);
+  };
+  
 
   return (
     <>
         {/* ScreenSaver - Logo first Screen*/}
         {!showFaceDector && (
-            <Box id='LogoMainBox' sx={ styles.logoMainBox }>
+            <Box 
+                id='LogoMainBox' 
+                sx={{ 
+                    ...styles.logoMainBox,
+                    cursor: 'pointer' // Add cursor pointer to indicate it's clickable
+                }}
+                onClick={() => setShowFaceDector(true)} // Add onClick handler
+            >
             <Container id='LogoContainer' maxWidth="lg">
                 <Box id='LogoContentBox' sx={ styles.logoContentBox }>
                     {/* Logo Component */}
                     <LogoComponent id='LogoComponent' />
-                    {/* WebCameraComponent: Video and Canvas  */}
-                    <WebCameraObjectDectionComponent setShowFaceDector={setShowFaceDector} isVisable={ false } />
+                    <Typography 
+                        variant="h2" 
+                        sx={{ 
+                            mt: 0, 
+                            color: 'text.secondary',
+                            animation: 'pulse 2s infinite'
+                        }}
+                    >
+                        CLICK SCREEN TO START
+                    </Typography>
                 </Box>
             </Container>
             </Box>
+            // <Box id='LogoMainBox' sx={ styles.logoMainBox }>
+            // <Container id='LogoContainer' maxWidth="lg">
+            //     <Box id='LogoContentBox' sx={ styles.logoContentBox }>
+            //         {/* Logo Component */}
+            //         <LogoComponent id='LogoComponent' />
+            //         {/* WebCameraComponent: Video and Canvas  */}
+            //         <WebCameraObjectDectionComponent setShowFaceDector={setShowFaceDector} isVisable={ false } />
+            //     </Box>
+            // </Container>
+            // </Box>
         )}
         {/* Face Detection - Person Object has been dected */}
         {showFaceDector && (
@@ -178,7 +169,72 @@ const HomePage = () => {
                 <Container id='DetectorContainer' maxWidth={false} disableGutters sx={ styles.detectorMainContainer }>
                     <Stack id='DetectorStack' direction="row" spacing={2} spacing={3} sx={ styles.detectorMainStack }>
                         {/* Left Column: WebCameraComponent Video and Canvas */}
-                        <WebCameraComponent enableDetectFace={ enableDetectFace } isVisable={ true } setActiveComponent={ setActiveComponent } setStatus={ setStatus }/>
+                        {/* <WebCameraComponent 
+                            enableDetectFace={enableDetectFace} 
+                            isVisable={activeComponent === 'userRecognition'} 
+                            setActiveComponent={setActiveComponent} 
+                            setStatus={setStatus}
+                        /> */}
+
+
+
+
+                        {/* <WebCameraComponent 
+                            enableDetectFace={enableDetectFace} 
+                            isVisable={ true} 
+                            setActiveComponent={setActiveComponent} 
+                            setStatus={setStatus}
+                        /> */}
+
+                        <WebCameraComponent 
+                            key={resetKey}
+                            enableDetectFace={enableDetectFace}
+                            isVisable={activeComponent === 'userRecognition'}
+                            setActiveComponent={setActiveComponent}
+                            setStatus={setStatus}
+                        />
+
+ {/* Another way to reset component is to use a key prop that changes whenever you want to reset the component. Here's how you can implement this approach:
+
+1. In the parent component that renders WebCameraComponent, add a state variable for the reset key:
+
+ADD
+const [resetKey, setResetKey] = useState(0);
+
+2. Then pass this key to the WebCameraComponent:
+// In the parent component's render method
+<WebCameraComponent 
+  key={resetKey}
+  enableDetectFace={enableDetectFace}
+  isVisable={isVisable}
+  setActiveComponent={setActiveComponent}
+  setStatus={setStatus}
+/>
+
+3. When you want to reset the component (for example, when a user fails verification and you want to try again), increment the key:
+
+// Call this function when you want to reset the WebCameraComponent
+const resetWebcamComponent = () => {
+  setResetKey(prevKey => prevKey + 1);
+};
+
+This approach doesn't require any changes to the WebCameraComponent itself. The parent component controls when to reset it by changing the key prop.
+
+Alternatively, if you prefer to stick with the current approach of resetting within the component, you can modify your useEffect to depend on both isVisable and enableDetectFace:
+
+useEffect(() => {
+    resetComponent();
+    
+    return () => {
+        // Cleanup code
+    };
+}, [isVisable, enableDetectFace]); // Depend on both visibility and detection flag
+
+This way, the component will reset whenever it becomes visible or when face detection is enabled/disabled.
+
+
+*/}
+
                         {/* Right Column: Content */}
                         <Box id='DetectorContentBox' sx={ styles.detectorContentBox }>
                             {activeComponent === 'scanCard' && 
@@ -193,13 +249,6 @@ const HomePage = () => {
                             {activeComponent === 'failedUserRecognition' && 
                                 <FailedUserRecognitionComponent setActiveComponent={ setActiveComponent }/>
                             }
-                            {/* {activeComponent === 'failedUserRecognition' && 
-                                <FailedUserRecognitionComponent 
-                                    setActiveComponent={setActiveComponent}
-                                    attempts={recognitionAttempts}
-                                    setAttempts={setRecognitionAttempts}
-                                />
-                            } */}
                             {activeComponent === 'deviceSelection' && 
                                 <DeviceSelectionComponent setActiveComponent={ setActiveComponent }/>
                             }

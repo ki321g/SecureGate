@@ -81,6 +81,12 @@ const ScanCardComponent = ({ setActiveComponent }) => {
         }
     }; 
 
+    // Reset cardUID and user when component mounts
+    useEffect(() => {
+        setCardUID('noCardUID');
+        setUser(null);
+    }, []);
+
     useEffect(() => {
         if (isReading) {
             const interval = setInterval(() => {

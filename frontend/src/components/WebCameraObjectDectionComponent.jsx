@@ -127,36 +127,36 @@ const WebCameraObjectDectionComponent = ({ setShowFaceDector, isVisable }) => {
             }
   
             // Draw bounding boxes
-            if (canvasRef.current) {
-              const canvasCtx = canvasRef.current.getContext("2d");
-              canvasCtx.save();
-              canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            // if (canvasRef.current) {
+            //   const canvasCtx = canvasRef.current.getContext("2d");
+            //   canvasCtx.save();
+            //   canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
               
-              for (const detection of detections.detections) {
-                const boundingBox = detection.boundingBox;
-                const category = detection.categories[0];
+            //   for (const detection of detections.detections) {
+            //     const boundingBox = detection.boundingBox;
+            //     const category = detection.categories[0];
                 
-                // Use actual detection dimensions with a small margin
-                canvasCtx.beginPath();
-                canvasCtx.rect(
-                  boundingBox.originX, 
-                  boundingBox.originY,
-                  boundingBox.width, 
-                  boundingBox.height
-                );
-                canvasCtx.lineWidth = 2;
-                canvasCtx.strokeStyle = 'red';
-                canvasCtx.stroke();
-                canvasCtx.font = '16px Arial';
-                canvasCtx.fillStyle = 'red';
-                canvasCtx.fillText(
-                  `${category.categoryName} (${Math.round(category.score * 100)}%)`, 
-                  boundingBox.originX + 5, 
-                  boundingBox.originY + 20
-                );
-              }
-              canvasCtx.restore();
-            }
+            //     // Use actual detection dimensions with a small margin
+            //     canvasCtx.beginPath();
+            //     canvasCtx.rect(
+            //       boundingBox.originX, 
+            //       boundingBox.originY,
+            //       boundingBox.width, 
+            //       boundingBox.height
+            //     );
+            //     canvasCtx.lineWidth = 2;
+            //     canvasCtx.strokeStyle = 'red';
+            //     canvasCtx.stroke();
+            //     canvasCtx.font = '16px Arial';
+            //     canvasCtx.fillStyle = 'red';
+            //     canvasCtx.fillText(
+            //       `${category.categoryName} (${Math.round(category.score * 100)}%)`, 
+            //       boundingBox.originX + 5, 
+            //       boundingBox.originY + 20
+            //     );
+            //   }
+            //   canvasCtx.restore();
+            // }
           } else {
             // Clear canvas if no detections
             if (canvasRef.current) {
