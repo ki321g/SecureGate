@@ -259,7 +259,14 @@ This way, the component will reset whenever it becomes visible or when face dete
         )}	
 
          {/* ToggleButtonComponent: Used during Development Remove of comment out */}
-        <ToggleButtonComponent showFaceDector={ showFaceDector } setShowFaceDector={ setShowFaceDector }/>
+        {/* <ToggleButtonComponent showFaceDector={ showFaceDector } setShowFaceDector={ setShowFaceDector }/> */}
+        <ToggleButtonComponent 
+            activeComponent={activeComponent} 
+            setActiveComponent={setActiveComponent}
+            showFaceDector={showFaceDector}
+            setShowFaceDector={setShowFaceDector}
+            />
+  
     </>
   );
 }

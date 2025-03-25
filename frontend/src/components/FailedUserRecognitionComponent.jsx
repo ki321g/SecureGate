@@ -12,6 +12,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 // API key and base URL from environment variables
 const API_KEY = import.meta.env.VITE_BACKEND_API_KEY;
 const API_BASE_URL = import.meta.env.VITE_BACKEND_API_BASE_URL;
+const COUNT_DOWN = import.meta.env.VITE_FAILED_COUNT_DOWN
 
 // Context
 import { cardUidContext } from '../contexts/cardUidContext'
@@ -25,27 +26,24 @@ const styles = {
         padding: '24px',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
         background: 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)',
-        border: '1px solid rgba(0, 0, 0, 0.08)',
     },
     content: {
         display: 'flex',
         flexDirection: 'column',
         gap: '20px',
-        alignItems: 'center',
-        justifyContent: 'center',
         height: '100%'
     },
     warningIcon: {
         fontSize: '80px',
         color: '#ff9800',
-        marginBottom: '16px'
+        alignSelf: 'center', 
     },
     attemptsWrapper: {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: '16px',
-        marginBottom: '24px'
+        marginBottom: 0
     },
     attemptCircle: {
         width: '60px',
@@ -54,12 +52,33 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        margin: '0 12px',
-        border: '2px solid #ff9800',
+        margin: '0 10px',
+        // border: '2px solid #ff9800',
+        border: '2px solid #d32f2f',
         position: 'relative'
     },
+    
+    // backgroundColor: '#ffebee',
+    // border: '2px solid #d32f2f',
     buttonContainer: {
-        marginTop: '24px'
+        // Button container styles
+    },
+    button: {
+        fontWeight: 'bold', 
+        fontSize: '1.8rem', 
+        padding: '10px 24px',
+        width: '100%'
+    },
+    countdownContainer: {
+        padding: '10px 24px', 
+        backgroundColor: '#fff0e6',
+        border: '2px solid #ff4500',
+        borderRadius: '4px',
+    },
+    countdownText: {
+        fontSize: '1.8rem', // Match button font size
+        fontWeight: 'bold',
+        color: '#ff4500'
     }
 };
 
@@ -71,6 +90,30 @@ const FailedUserRecognitionComponent = ({ setActiveComponent }) => {
     const [attempts, setAttempts] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [countdown, setCountdown] = useState(COUNT_DOWN);
+
+    // Countdown timer effect
+    useEffect(() => {
+        let timer;
+        if (countdown > 0) {
+            timer = setTimeout(() => {
+                setCountdown(countdown - 1);
+            }, 1000);
+        } else if (countdown === 0) {
+            // Show the scan card component after countdown           
+            // change when i have DB setup
+            // setActiveComponent('scanCard');
+            if (attempts === MAX_ATTEMPTS) {
+                handleTryAgain();
+            } else {
+                setActiveComponent('scanCard');
+            }
+        }
+        
+        return () => {
+            clearTimeout(timer);
+        };
+    }, [countdown]);
 
     // Fetch initial attempts count
     useEffect(() => {
@@ -147,10 +190,6 @@ const FailedUserRecognitionComponent = ({ setActiveComponent }) => {
                     }
                 );
             }
-            // setCardUID('noCardUID');
-            // setUser(null);
-
-            // refreshPage();
             // Navigate back to scan card
             setActiveComponent('scanCard');
         } catch (err) {
@@ -199,13 +238,18 @@ const FailedUserRecognitionComponent = ({ setActiveComponent }) => {
                     Recognition Failed
                 </Typography>
                 
-                <Typography variant="body1" sx={{ fontSize: '1.2rem', textAlign: 'center', marginTop: '8px' }}>
+                <Typography variant="body1" sx={{ fontSize: '1.2rem', textAlign: 'center', marginTop: '2px' }}>
                     {attempts >= MAX_ATTEMPTS 
-                        ? "Maximum attempts reached. Please try again later."
-                        : "We couldn't verify your identity. Please try again."}
+                        ? "Maximum attempts reached."
+                        : "We couldn't verify your identity. Please try again or wait for automatic redirect."}
                 </Typography>
                 
-                <Divider sx={{ width: '80%', margin: '16px 0' }} />
+                {/* <Divider sx={{ width: '80%', margin: '16px 0' }} /> */}
+                <Box sx={styles.countdownContainer}>
+                    <Typography sx={styles.countdownText}>
+                        Resets in {countdown}
+                    </Typography>
+                </Box>
                 
                 <Box sx={styles.attemptsWrapper}>
                     <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>
@@ -217,8 +261,8 @@ const FailedUserRecognitionComponent = ({ setActiveComponent }) => {
                             key={index} 
                             sx={{
                                 ...styles.attemptCircle,
-                                backgroundColor: index < attempts ? '#fff0e6' : 'transparent',
-                                borderColor: index < attempts ? '#ff4500' : '#ccc'
+                                backgroundColor: index < attempts ? '#ffebee' : 'transparent',
+                                borderColor: index < attempts ? '2px solid #d32f2f' : '#ccc'
                             }}
                         >
                             <Typography 
@@ -233,19 +277,43 @@ const FailedUserRecognitionComponent = ({ setActiveComponent }) => {
                         </Box>
                     ))}
                 </Box>
-                
-                <Box sx={styles.buttonContainer}>
-                    <Button 
-                        variant="contained" 
-                        color={attempts >= MAX_ATTEMPTS ? "primary" : "warning"}
-                        size="large"
-                        sx={{ fontWeight: 'bold', fontSize: '1.8rem', padding: '10px 24px' }}
-                        onClick={handleTryAgain}
-                        // onClick={refreshPage}
-                    >
-                        {attempts >= MAX_ATTEMPTS ? "Reset & Try Again" : "Try Again"}
-                    </Button>
-                </Box>
+                {/* Show Try Again button if attempts are less than MAX_ATTEMPTS */}
+                {attempts === MAX_ATTEMPTS ? (                    
+                    // Show ACCOUNT LOCKED message when MAX_ATTEMPTS is reached
+                    <Box sx={{
+                        padding: '16px 24px',
+                        backgroundColor: '#ffebee',
+                        border: '2px solid #d32f2f',
+                        borderRadius: '4px',
+                        textAlign: 'center'
+                    }}>
+                        <Typography 
+                            variant="h4" 
+                            sx={{ 
+                                fontWeight: 'bold', 
+                                color: '#d32f2f',
+                                fontSize: '2rem'
+                            }}
+                        >
+                            ACCOUNT LOCKED
+                        </Typography>
+                        <Typography sx={{ color: '#d32f2f', mt: 1 }}>
+                            Please contact an administrator
+                        </Typography>
+                    </Box>
+                ) : (
+                    <Box sx={styles.buttonContainer}>
+                        <Button 
+                            variant="contained" 
+                            color="warning"
+                            size="large"
+                            sx={styles.button}
+                            onClick={handleTryAgain}
+                        >
+                            Try Again
+                        </Button>
+                    </Box>
+                )}
             </Box>
         </Box>
     );
