@@ -176,6 +176,13 @@ export const roleToDeviceApi = {
       .eq('role_id', roleId)
     return { data, error }
   },
+  getDevicesByDevice: async (deviceId) => {
+    const { data, error } = await supabase
+      .from('role_to_device')
+      .select('roles(*)')
+      .eq('device_id', deviceId)
+    return { data, error }
+  },
   unassign: async (roleId, deviceId) => {
     const { error } = await supabase
       .from('role_to_device')

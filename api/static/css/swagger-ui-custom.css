@@ -104,7 +104,7 @@ body {
 }
 
 .swagger-ui section.models {
-    margin: 50px 0 50px !important;
+    margin: 0px 0 50px !important;
 }
 
 .swagger-ui section.models .model-container:first-of-type {

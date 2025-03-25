@@ -442,7 +442,7 @@ def get_facial_recognition_attempts(api_key: str = Depends(get_api_key)):
             'message': f'Failed to get facial recognition attempts: {str(e)}'
         }
 
-@app.post('/facial-recognition/attempts', tags=["Facial Recognition"], response_model=ApiResponse)
+@app.post('/facial-recognition/attempts', tags=["Facial Recognition"])
 def set_facial_recognition_attempts(
     attempts_request: SetAttemptsRequest = Body(..., example={"attempts": 0}),
     api_key: str = Depends(get_api_key)
@@ -462,7 +462,8 @@ def set_facial_recognition_attempts(
         shared_state.FACIAL_RECOGNITION_ATTEMPTS = attempts_request.attempts
         return {
             'status': 'success',
-            'message': f'Facial recognition attempts set to {attempts_request.attempts}'
+            'message': f'Facial recognition attempts set to {attempts_request.attempts}',
+            'attempts': shared_state.FACIAL_RECOGNITION_ATTEMPTS
         }
     except Exception as e:
         return {

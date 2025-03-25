@@ -28,6 +28,8 @@ const styles = {
         overflow: 'hidden',
         width: videoWidth,
         height: videoHeight,
+        // backgroundColor: '#4CAF50',
+        // border: '10px solid #4CAF50',
         backgroundColor: 'primary.main', 
         border: (theme) => `10px solid ${theme.palette.primary.main}`,
         borderRadius: '8px',
@@ -95,91 +97,77 @@ const WebCameraObjectDectionComponent = ({ setShowFaceDector, isVisable }) => {
     initializeObjectDetector();
   }, []);
 
+
   useEffect(() => {
     if (!webcamRef.current || !objectDetector) {
       return; // Exit if webcam or detector isn't ready
     }
-    
-    // Add a small delay to ensure camera is fully initialized
-    const initTimeout = setTimeout(() => {
-      const detect = async () => {
-        const video = webcamRef.current?.video;
-        if (!video || video.readyState !== 4) { // 4 = HAVE_ENOUGH_DATA
-          requestAnimationFrame(detect);
-          return;
-        }
-  
-        try {
-          let startTimeMs = performance.now();
-          const detections = objectDetector.detectForVideo(video, startTimeMs);
-          
-          // Reset detection state each frame
-          setPersonDetected(false);
-  
-          // Process detections
-          if (detections && detections.detections && detections.detections.length > 0) {
-            for (const detection of detections.detections) {
-              if (detection.categories[0].categoryName === 'person') {
-                setPersonDetected(true);
-                setShowFaceDector(true); 
-                break; // Exit loop if a person is found
-              }
-            }
-  
-            // Draw bounding boxes
-            // if (canvasRef.current) {
-            //   const canvasCtx = canvasRef.current.getContext("2d");
-            //   canvasCtx.save();
-            //   canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-              
-            //   for (const detection of detections.detections) {
-            //     const boundingBox = detection.boundingBox;
-            //     const category = detection.categories[0];
-                
-            //     // Use actual detection dimensions with a small margin
-            //     canvasCtx.beginPath();
-            //     canvasCtx.rect(
-            //       boundingBox.originX, 
-            //       boundingBox.originY,
-            //       boundingBox.width, 
-            //       boundingBox.height
-            //     );
-            //     canvasCtx.lineWidth = 2;
-            //     canvasCtx.strokeStyle = 'red';
-            //     canvasCtx.stroke();
-            //     canvasCtx.font = '16px Arial';
-            //     canvasCtx.fillStyle = 'red';
-            //     canvasCtx.fillText(
-            //       `${category.categoryName} (${Math.round(category.score * 100)}%)`, 
-            //       boundingBox.originX + 5, 
-            //       boundingBox.originY + 20
-            //     );
-            //   }
-            //   canvasCtx.restore();
-            // }
-          } else {
-            // Clear canvas if no detections
-            if (canvasRef.current) {
-              const canvasCtx = canvasRef.current.getContext("2d");
-              canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-            }
+    const detect = async () => {
+      const video = webcamRef.current.video;
+      if (!video) {
+        return
+      }
+
+      let startTimeMs = performance.now();
+      let results = null;
+      if (video.currentTime !== lastVideoTime) {
+        setLastVideoTime(video.currentTime);
+        const detections = objectDetector.detectForVideo(video, startTimeMs);
+        results = detections;
+      }
+
+      // Reset detection state each frame
+      setPersonDetected(false);
+
+      if (results.detections.length > 0) {
+        for (const detection of results.detections) {
+          if (detection.categories[0].categoryName === 'person') {
+            setPersonDetected(true);
+            setShowFaceDector(true); 
+            break; // Exit loop if a person is found
           }
-        } catch (error) {
-          console.error("Detection error:", error);
         }
-  
-        requestAnimationFrame(detect); // Continue detection loop
-      };
-  
-      const id = requestAnimationFrame(detect); // Start detection loop
-      return () => {
-        cancelAnimationFrame(id);     // Cleanup on unmount
-      };
-    }, 500); // 500ms delay to ensure camera is ready
-    
-    return () => clearTimeout(initTimeout);
-  }, [objectDetector, webcamRef, canvasRef, setShowFaceDector]);
-  
+
+        // Bounding box drawing code (optional, can be removed)
+        const canvasCtx = canvasRef.current.getContext("2d");
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        for (const detection of results.detections) {
+          const boundingBox = detection.boundingBox;
+          const category = detection.categories[0];
+
+          // Adjust bounding box here:
+          const offsetY = 90; // Adjust this value as needed
+        //   const offsetWidth = 650; // Adjust this value
+        //   const heightIncrease = 10; // Adjust this value
+          
+          canvasCtx.beginPath();
+          canvasCtx.rect(
+            boundingBox.originX, 
+            boundingBox.originY - offsetY,
+            200, // boundingBox.width - offsetWidth,
+            200  // boundingBox.height + heightIncrease 
+            );
+          canvasCtx.lineWidth = 2;
+          canvasCtx.strokeStyle = 'red';
+          canvasCtx.stroke();
+          canvasCtx.font = '16px Arial';
+          canvasCtx.fillStyle = 'red';
+          canvasCtx.fillText(`${category.categoryName} (${Math.round(category.score * 100)}%)`, boundingBox.originX + 5, boundingBox.originY + 20);
+        }
+        canvasCtx.restore();
+      } else {
+          const canvasCtx = canvasRef.current.getContext("2d");
+          canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+
+      requestAnimationFrame(detect); // Continue detection loop
+    };
+
+    const id = requestAnimationFrame(detect); // Start detection loop
+    return () => cancelAnimationFrame(id);     // Cleanup on unmount
+
+  }, [objectDetector]); // Depend on the objectDetector state
 
   return (
     <>

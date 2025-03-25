@@ -35,7 +35,7 @@ const deepFaceDetector = import.meta.env.VITE_DEEPFACE_DETECTOR_BACKEND || "medi
 const deepFaceDistanceMetric = import.meta.env.VITE_DEEPFACE_DISTANCE_METRIC || "cosine";
 const deepFaceServiceEndpoint = import.meta.env.VITE_DEEPFACE_SERVICE_URL;
 const deepFaceAntiSpoofing = import.meta.env.VITE_DEEPFACE_ANTI_SPOOFING === "1";
-const facialStepDelay = import.meta.env.VITE_FACIAL_STEP_DELAY;
+const facialStepDelay = import.meta.env.VITE_FACIAL_STEP_DELAY || "100";
 
 
 // Constants
@@ -118,9 +118,6 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
     const [openDialog, setOpenDialog] = useState(false);
     const [verificationData, setVerificationData] = useState(null);
 
-
-
-
     /* --- useEffect's for use with Facial Detection and Landmark Detection ---*/
     /* 
      * Different useEffect's are used,
@@ -130,8 +127,58 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
      *   4. Start Landmark Drawing Loop
      */
 
+    // 1. Reset all states to their defaults
+    const resetComponent = () => {
+        setFaceDetector(null);
+        setFaceLandmarker(null);
+        setShowLandmarks(false);
+        setFaceDetected(false);
+        setDetectingFace(true);
+        setIsReady(false);
+        setImgSrc(null);
+        setHasCapturedImage(false);
+        setIsVerified(null);
+        setIsAnalyzed(null);
+        setOpenDialog(false);
+        setVerificationData(null);
+    
+        // Clear the canvas if it exists
+        if (canvasRef.current) {
+            const ctx = canvasRef.current.getContext('2d');
+            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        }
+        
+        // Reset the status
+        setStatus({ text: 'DETECTING FACE', color: '#3498db' });
+    };
+    
+    
+    // Add a useEffect that runs on component mount to reset everything
+    useEffect(() => {
+        resetComponent();
+        
+        // Return cleanup function
+        return () => {
+            // Cancel any pending animation frames or timers here
+            if (faceDetector) {
+                // Clean up any detector resources if needed
+            }
+            if (faceLandmarker) {
+                // Clean up any landmarker resources if needed
+            }
+        };
+    }, [isVisable]); // Triggered when isVisable changes
+
+
     /* --- 1. Initialize FaceDetector --- */
     useEffect(() => {
+        let isMounted = true; 
+
+        // Only initialize if the component is visible
+        if (!isVisable) {
+            return () => { isMounted = false; };
+        }
+
         const initializeFaceDetection = async () => {
             const vision = await FilesetResolver.forVisionTasks( faceWASM );
 
@@ -144,15 +191,24 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
                 numFaces: 1
             });
             
-            // Add 1 second delay before setting status
-            setTimeout(() => {
-                setStatus({ text: 'DETECTING FACE', color: '#3498db' });                
-                setFaceDetector(detector);
-            }, facialStepDelay); // 1000 milliseconds = 1 second
+            if (isMounted) {
+                setStatus({ text: 'DETECTING FACE', color: '#3498db' });
+                // Add delay before setting detector
+                setTimeout(() => {
+                    if (isMounted) {
+                        setFaceDetector(detector);
+                    }
+                }, facialStepDelay);
+            }
         };
         console.log('enableDetectFace: ', enableDetectFace);
         initializeFaceDetection();
-    }, []);
+
+        // Cleanup function
+        return () => {
+            isMounted = false; // Prevent state updates if component unmounts
+        };
+    }, [isVisable]);  // Triggered when isVisable changes
 
     /* --- 2. Initialize FaceLandmarker (Conditional) --- */
     useEffect(() => {
@@ -170,11 +226,11 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
             });
 
             setFaceLandmarker(landmarker);
-            // Add 1 second delay before setting status
+            // Add  delay before setting status
             setTimeout(() => {
                 setStatus({ text: 'ANALYZING', color: '#FFC107' });
                 setIsReady(true); // FaceLandmarker is ready
-            }, facialStepDelay);
+            }, facialStepDelay * 10);
         };
 
         // Only initialize FaceLandmarker AFTER face is detected AND a delay
@@ -187,11 +243,14 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
 
     /* --- 3. Start Face Detection Loop (Conditional) --- */
     useEffect(() => {
+        let isMounted = true;
         let animationFrame;
         let localHasCaptured = hasCapturedImage; // Create a local variable
 
 
         const detectFace = async () => {
+            if (!isMounted) return;
+
             if (enableDetectFace && webcamRef.current?.video) {
                 const video = webcamRef.current.video;
                 const results = faceDetector.detectForVideo(video, performance.now());
@@ -211,7 +270,7 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
                     setFaceDetected(false);
                 }
             }
-            if (enableDetectFace) {
+            if (enableDetectFace && isMounted) {
                 animationFrame = requestAnimationFrame(detectFace);
             }
         };
@@ -222,6 +281,7 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
         }
 
         return () => {
+            isMounted = false;
             if (animationFrame) {
                 cancelAnimationFrame(animationFrame);
             }
@@ -239,8 +299,11 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
 
         let lastVideoTime = -1;
         let animationFrame;
+        let isMounted = true;
 
         const predictWebcam = async () => {
+            if (!isMounted) return;
+
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
 
@@ -249,8 +312,10 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
                 const results = faceLandmarker.detectForVideo(video, performance.now());
                 drawResults(ctx, results); // Pass showLandmarks
             }
-
-            animationFrame = requestAnimationFrame(predictWebcam);
+            
+            if (isMounted) {
+                animationFrame = requestAnimationFrame(predictWebcam);
+            }
         };
 
         // Start landmark prediction immediately after FaceLandmarker is ready
@@ -259,7 +324,10 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
         }
 
         return () => {
-            cancelAnimationFrame(animationFrame);
+            isMounted = false;
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+            }
         };
     }, [isReady, faceLandmarker]);    
     /* --- useEfect's End --- */
@@ -332,19 +400,18 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
               setIsAnalyzed(false);
               setStatus({ text: 'SUCCESS', color: '#4CAF50' });
             //   downloadJsonFile(data, `verification-results-${Date.now()}.json`);
-              // Add 1 second delay before setting status
+              // Add  delay before setting status
               setTimeout(() => {
                 setActiveComponent('deviceSelection');
-              }, facialStepDelay); 
+              }, facialStepDelay * 15); 
             }
             // if isVerified key is false
             if (data.verified === false) {
                 setIsVerified(false);
                 setStatus({ text: 'FAILED', color: '#F44336' });
-                // downloadJsonFile(data, `verification-results-${Date.now()}.json`);
                 setTimeout(() => {
                     setActiveComponent('failedUserRecognition');
-                }, facialStepDelay);
+                }, facialStepDelay * 15);
             }
           
         }

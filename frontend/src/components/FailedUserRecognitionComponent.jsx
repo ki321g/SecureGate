@@ -150,9 +150,9 @@ const FailedUserRecognitionComponent = ({ setActiveComponent }) => {
             // setCardUID('noCardUID');
             // setUser(null);
 
-            refreshPage();
+            // refreshPage();
             // Navigate back to scan card
-            // setActiveComponent('scanCard');
+            setActiveComponent('scanCard');
         } catch (err) {
             setError('Failed to reset attempts');
             console.error(err);

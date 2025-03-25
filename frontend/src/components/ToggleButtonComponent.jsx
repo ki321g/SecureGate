@@ -1,5 +1,6 @@
 import { Typography, Button, Stack } from '@mui/material';
-import { SecurityOutlined } from '@mui/icons-material';
+import { SecurityOutlined, Dashboard  } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 
 const styles = {
 	toggleButtonStack: {
@@ -14,8 +15,14 @@ const styles = {
 	},
 };
 const ToggleButtonComponent = ({ showFaceDector, setShowFaceDector }) => {
+	const navigate = useNavigate()
+	
 	const handleToggle = () => {
 		setShowFaceDector((previousState) => !previousState); // Toggle faceDetector state
+	};
+	
+	const navigateToDashboard = () => {
+		navigate('/dashboard');
 	};
 
 	return (
@@ -29,6 +36,18 @@ const ToggleButtonComponent = ({ showFaceDector, setShowFaceDector }) => {
 						"Toggle to Logo"
 					)}
 				</Button>
+
+				{/* Dashboard Navigation Button */}
+				<Button
+					id='dashboardButton'
+					variant="contained"
+					color="primary"
+					onClick={navigateToDashboard}
+					startIcon={<Dashboard />}
+				>
+					Go to Dashboard
+				</Button>
+
 				{!showFaceDector ? (
 					<Typography>Logo (showFaceDector is OFF)</Typography>
 				) : (

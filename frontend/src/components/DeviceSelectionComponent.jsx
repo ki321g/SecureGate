@@ -54,28 +54,7 @@ const styles = {
     padding: '12px',
     border: '2px solid #e0e0e0',
     backgroundColor: '#1e1e1e',
-    marginBottom: '20px',
-    // Custom scrollbar for touch screens
-    // '&::-webkit-scrollbar': {
-    //   width: '40px', // Wider scrollbar      
-    // },
-    // '&::-webkit-scrollbar-track': {
-    //   background: '#2a2a2a', // Scrollbar track color
-    //   // borderRadius: '8px',
-    // },
-    // '&::-webkit-scrollbar-thumb': {
-    //   background: '#555', // Scrollbar thumb color
-    //   // borderRadius: '8px',
-    //   border: '3px solid #2a2a2a', // Creates padding around the scrollbar
-    //   width: '40px',
-    // },
-    // '&::-webkit-scrollbar-thumb:hover': {
-    //   background: '#777', // Hover color
-    //   width: '40px',
-    // },
-    // // For Firefox
-    // scrollbarWidth: 'thick',
-    // scrollbarColor: '#555 #2a2a2a',
+    marginBottom: '20px', 
   },    
   deviceItem: {
     padding: '8px 12px',
@@ -137,54 +116,98 @@ const styles = {
 };
 
 const DeviceSelectionComponent = () => {
-  const [loading, setLoading] = useState(false);
-  const [refreshingStatus, setRefreshingStatus] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with loading true
   const [error, setError] = useState(null);
   const [deviceStatus, setDeviceStatus] = useState({});
   const [selectedDevices, setSelectedDevices] = useState([]);
   
+  const [dataReady, setDataReady] = useState(false);
   // Get devices from DataContext
   const { devices, setDevices } = useData();
-  const { user, setUser } = useUser();
+  const { user } = useUser();
 
-   // Fetch user devices on component mount
-   useEffect(() => {
-    const fetchUserDevices = async () => {
-        try {
-             const { data, error } = await functionApi.invoke('get_devices_by_user_uid', { user_uid: user.uid });
-            
-            if (error) throw error;
-            setDevices(data);
-            console.log('DEVICES:', data)
-
-        } catch (error) {
-            console.error('Error fetching DEVICES data:', error.message);
-        }
-    };
-    fetchUserDevices();
-}, []);
-
-  // Fetch device status on component mount
+  // Initialize component on mount
   useEffect(() => {
-    fetchDeviceStatus();
-  }, [devices]);
+    const initializeComponent = async () => {
+      try {
+        // Reset facial recognition attempts
+        await resetFacialRecognitionAttemptsCount();
+        
+        // Fetch user devices
+        const deviceData = await fetchUserDevices();
+        
+        if (deviceData && deviceData.length > 0) {
+          // Fetch device statuses
+          await fetchDeviceStatus(deviceData);
+        }
+        
+        // All data is ready
+        setDataReady(true);
+      } catch (err) {
+        console.error("Initialization error:", err);
+        setError("Failed to initialize. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeComponent();
+  }, [user.uid]); // Only run when user ID changes
+  
+    const resetFacialRecognitionAttemptsCount = async () => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/facial-recognition/attempts`,
+        { attempts: 0 },
+        {
+          headers: {
+            'X-API-Key': API_KEY,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      console.log('Count reset successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to reset count:', error);
+      // Don't throw here as this isn't critical for the component to function
+    }
+  };
+
+  const fetchUserDevices = async () => {
+    try {
+      const { data, error: apiError } = await functionApi.invoke('get_devices_by_user_uid', { user_uid: user.uid });
+      
+      if (apiError) throw apiError;
+      
+      // Set devices in context
+      setDevices(data);
+      console.log('DEVICES:', data);
+      
+      return data;
+    } catch (error) {
+      console.error('Error fetching devices data:', error.message);
+      setError("Failed to fetch your devices. Please try again.");
+      throw error; // Propagate error to caller
+    }
+  };
 
   // Function to fetch and update device status
-  const fetchDeviceStatus = async () => {
-    if (devices.length === 0) return;
+  const fetchDeviceStatus = async (deviceList = devices) => {
+    if (!deviceList || deviceList.length === 0) return;
     
-    setRefreshingStatus(true);
     const newStatus = { ...deviceStatus };
     
     try {
       await Promise.all(
-        devices.map(async (device) => {
+        deviceList.map(async (device) => {
           try {
             const response = await axios.get(`${API_BASE_URL}/tinytuya/status/${device.deviceid}`, {
-                headers: {
+              headers: {
                 'X-API-Key': API_KEY,
                 'Content-Type': 'application/json'
-                }
+              }
             });
 
             const data = response.data;
@@ -201,17 +224,18 @@ const DeviceSelectionComponent = () => {
           }
         })
       );
+      
       setDeviceStatus(newStatus);
+      return newStatus;
     } catch (error) {
       console.error(error);
       setError("Failed to fetch device status");
-    } finally {
-      setRefreshingStatus(false);
+      throw error;
     }
   }; 
 
-   // Function to control the door (open, close, toggle)
-   const controlDoor = async (action) => {
+  // Function to control the door (open, close, toggle)
+  const controlDoor = async (action) => {
     try {      
       const response = await axios.post(`${API_BASE_URL}/door`, 
         { action }, // request body
@@ -222,11 +246,10 @@ const DeviceSelectionComponent = () => {
           }
         }
       );
-      const result = response.data;
-
+      return response.data;
     } catch (err) {
-    setError(`Failed to ${action} door: ${err.message}`);
-    } finally {
+      setError(`Failed to ${action} door: ${err.message}`);
+      throw err;
     }
   };
   
@@ -250,7 +273,7 @@ const DeviceSelectionComponent = () => {
   const clearSelections = () => {
     setSelectedDevices([]);
   };
-  
+
   // Function to turn on selected devices
   const turnOnDevices = async () => {
     if (selectedDevices.length === 0) {
@@ -258,6 +281,7 @@ const DeviceSelectionComponent = () => {
       return;
     }
     
+    setLoading(true);
     const newStatus = { ...deviceStatus };
     
     try {
@@ -287,7 +311,9 @@ const DeviceSelectionComponent = () => {
     } catch (err) {
       setError(`Failed to turn on devices: ${err.message}`);
     } finally {
-      fetchDeviceStatus();
+      // Refresh device status after turning on
+      await fetchDeviceStatus();
+      setLoading(false);
     }
   };
 
@@ -298,6 +324,7 @@ const DeviceSelectionComponent = () => {
       return;
     }
     
+    setLoading(true);
     const newStatus = { ...deviceStatus };
     
     try {
@@ -327,14 +354,23 @@ const DeviceSelectionComponent = () => {
     } catch (err) {
       setError(`Failed to turn off devices: ${err.message}`);
     } finally {
-      fetchDeviceStatus();
+      // Refresh device status after turning off
+      await fetchDeviceStatus();
+      setLoading(false);
     }
   };
 
   // Function to Open the Door and Turn on Devices
   const openDoor = async () => {
-    controlDoor('toggle');
-    turnOnDevices();
+    setLoading(true);
+    try {
+      await controlDoor('toggle');
+      await turnOnDevices();
+    } catch (err) {
+      console.error("Error in openDoor:", err);
+    } finally {
+      setLoading(false);
+    }
   };
   
   // Get status color based on device status
@@ -356,8 +392,8 @@ const DeviceSelectionComponent = () => {
       </Box>
       
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-          <CircularProgress />
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+          <CircularProgress size={60} />
         </Box>
       ) : (
         <>
@@ -385,6 +421,7 @@ const DeviceSelectionComponent = () => {
                   size="small" 
                   onClick={selectAllDevices}
                   startIcon={<CheckBoxIcon />}
+                  disabled={devices.length === 0}
                 >
                   Select All
                 </Button>
@@ -394,6 +431,7 @@ const DeviceSelectionComponent = () => {
                   onClick={clearSelections}
                   startIcon={<CheckBoxOutlineBlankIcon />}
                   sx={{ ml: 1 }}
+                  disabled={selectedDevices.length === 0}
                 >
                   Clear
                 </Button>
@@ -401,53 +439,61 @@ const DeviceSelectionComponent = () => {
             </Box>
             
             <Box id='DevicesBoxContainer' sx={styles.devicesContainer}>
-              <FormGroup>
-              {[...devices].sort((a, b) => a.device_name.localeCompare(b.device_name)).map((device) => (
-                  <Box id='InnerDeviceBoxContainer'
-                    key={device.deviceid}
-                    sx={{
-                      ...styles.deviceItem,
-                      ...(selectedDevices.includes(device.deviceid) ? styles.selectedDeviceItem : {})
-                    }}
-                  >
-                    <FormControlLabel
-                      control={
-                        <Checkbox 
-                          checked={selectedDevices.includes(device.deviceid)}
-                          onChange={() => toggleDeviceSelection(device.deviceid)}
-                        />
-                      }
-                      label={
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                          <Typography variant="h1" sx={{ fontSize: '1.8rem' }}>{device.device_name}</Typography>
-                          {deviceStatus[device.deviceid] && (
-                            <Chip 
-                              size="medium" 
-                              label={deviceStatus[device.deviceid]} 
-                              color={getStatusColor(deviceStatus[device.deviceid])}
-                              sx={{ ml: 3,  borderRadius: '8px',fontWeight: 'bold', fontSize: '1.2rem', padding: '10px', height: '40px' }}
-                            />
-                          )}
+              {!dataReady ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <FormGroup>
+                  {devices.length > 0 ? (
+                    [...devices]
+                      .sort((a, b) => a.device_name.localeCompare(b.device_name))
+                      .map((device) => (
+                        <Box id='InnerDeviceBoxContainer'
+                          key={device.deviceid}
+                          sx={{
+                            ...styles.deviceItem,
+                            ...(selectedDevices.includes(device.deviceid) ? styles.selectedDeviceItem : {})
+                          }}
+                        >
+                          <FormControlLabel
+                            control={
+                              <Checkbox 
+                                checked={selectedDevices.includes(device.deviceid)}
+                                onChange={() => toggleDeviceSelection(device.deviceid)}
+                              />
+                            }
+                            label={
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                                <Typography variant="h1" sx={{ fontSize: '1.8rem' }}>{device.device_name}</Typography>
+                                {deviceStatus[device.deviceid] && (
+                                  <Chip 
+                                    size="medium" 
+                                    label={deviceStatus[device.deviceid]} 
+                                    color={getStatusColor(deviceStatus[device.deviceid])}
+                                    sx={{ ml: 3, borderRadius: '8px', fontWeight: 'bold', fontSize: '1.2rem', padding: '10px', height: '40px' }}
+                                  />
+                                )}
+                              </Box>
+                            }
+                            sx={{ width: '100%' }}
+                          />
                         </Box>
-                      }
-                      sx={{ width: '100%' }}
-                    />
-                  </Box>
-                ))}
-                
-                {devices.length === 0 && (
-                  <Typography sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>
-                    No devices available
-                  </Typography>
-                )}
-              </FormGroup>
+                      ))
+                  ) : (
+                    <Typography sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>
+                      No devices available
+                    </Typography>
+                  )}
+                </FormGroup>
+              )}
             </Box>
             
             <Box sx={styles.actionButtons}>
               <Button
                 variant="contained"
                 color="success"
-                disabled={loading || selectedDevices.length === 0}
+                disabled={selectedDevices.length === 0 || loading}
                 onClick={openDoor}
                 startIcon={<PowerSettingsNewIcon />}
                 size="large"
@@ -455,31 +501,8 @@ const DeviceSelectionComponent = () => {
               >
                 Open Door & Turn ON Devices
               </Button>
-
-              {/* <Button
-                variant="contained"
-                color="success"
-                disabled={loading || selectedDevices.length === 0}
-                onClick={turnOnDevices}
-                startIcon={<PowerSettingsNewIcon />}
-                size="large"
-              >
-                On
-              </Button>
-              
-              <Button
-                variant="contained"
-                color="error"
-                disabled={loading || selectedDevices.length === 0}
-                onClick={turnOffDevices}
-                startIcon={<PowerSettingsNewIcon />}
-                size="large"
-              >
-                Off
-              </Button> */}
             </Box>
           </Paper>
-
         </>
       )}
     </Box>
@@ -487,3 +510,4 @@ const DeviceSelectionComponent = () => {
 };
 
 export default DeviceSelectionComponent;
+
