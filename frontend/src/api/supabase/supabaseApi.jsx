@@ -314,7 +314,7 @@ export const failedAttemptsApi = {
       .from('failed_attempts')
       .select('*')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
     return { data, error }
   },  
   // Update failed attempts for a user (increment by 1)

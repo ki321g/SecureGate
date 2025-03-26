@@ -118,7 +118,7 @@ const styles = {
   },
 };
 
-const DeviceSelectionComponent = () => {
+const DeviceSelectionComponent = ({ setActiveComponent }) => {
   const [loading, setLoading] = useState(true); // Start with loading true
   const [error, setError] = useState(null);
   const [deviceStatus, setDeviceStatus] = useState({});
@@ -384,8 +384,11 @@ const DeviceSelectionComponent = () => {
   const openDoor = async () => {
     setLoading(true);
     try {
-      await controlDoor('toggle');
-      await turnOnDevices();
+      // await controlDoor('toggle');
+      // await turnOnDevices();
+      controlDoor('toggle');
+      turnOnDevices();
+      setActiveComponent('successUserRecognition');
     } catch (err) {
       console.error("Error in openDoor:", err);
     } finally {

@@ -19,6 +19,7 @@ import UserRecognitionComponent from '../components/UserRecognitionComponent';
 import FailedUserRecognitionComponent from '../components/FailedUserRecognitionComponent';
 import DeviceSelectionComponent from '../components/DeviceSelectionComponent';
 import EnterPinComponent from '../components/EnterPinComponent';
+import SuccessComponent from '../components/SuccessComponent';
 
 //Testing
 import ToggleButtonComponent from '../components/ToggleButtonComponent';
@@ -255,6 +256,12 @@ This way, the component will reset whenever it becomes visible or when face dete
                             {activeComponent === 'deviceSelection' && 
                                 <DeviceSelectionComponent setActiveComponent={ setActiveComponent }/>
                             }
+                            {activeComponent === 'successUserRecognition' && 
+                                <SuccessComponent 
+                                    setActiveComponent={ setActiveComponent }
+                                    setShowFaceDector={setShowFaceDector}
+                                />
+                            }
                         </Box>
                     </Stack>
                 </Container>
@@ -263,12 +270,12 @@ This way, the component will reset whenever it becomes visible or when face dete
 
          {/* ToggleButtonComponent: Used during Development Remove of comment out */}
         {/* <ToggleButtonComponent showFaceDector={ showFaceDector } setShowFaceDector={ setShowFaceDector }/> */}
-        <ToggleButtonComponent 
+        {/* <ToggleButtonComponent 
             activeComponent={activeComponent} 
             setActiveComponent={setActiveComponent}
             showFaceDector={showFaceDector}
             setShowFaceDector={setShowFaceDector}
-            />
+            /> */}
   
     </>
   );

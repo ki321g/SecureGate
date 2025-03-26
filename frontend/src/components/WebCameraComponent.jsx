@@ -41,7 +41,9 @@ const facialStepDelay = import.meta.env.VITE_FACIAL_STEP_DELAY || "100";
 // Constants
 const faceDectorModel = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
 const faceLandmarkerModel = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
-const faceWASM = '/node_modules/@mediapipe/tasks-vision/wasm';
+const faceWASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2/wasm';
+// const faceWASM = '/node_modules/@mediapipe/tasks-vision/wasm';
+
 // "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2/wasm"
 
 const videoWidth = 1024;
