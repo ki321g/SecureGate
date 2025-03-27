@@ -37,18 +37,17 @@ const deepFaceServiceEndpoint = import.meta.env.VITE_DEEPFACE_SERVICE_URL;
 const deepFaceAntiSpoofing = import.meta.env.VITE_DEEPFACE_ANTI_SPOOFING === "1";
 const facialStepDelay = import.meta.env.VITE_FACIAL_STEP_DELAY || "100";
 
-
 // Constants
 const faceDectorModel = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
 const faceLandmarkerModel = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
 const faceWASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2/wasm';
 // const faceWASM = '/node_modules/@mediapipe/tasks-vision/wasm';
 
-// "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2/wasm"
+// https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2/wasm
 
 const videoWidth = 1024;
 const videoHeight = 576;
-const faceLandmarkerWait = 200;
+const faceLandmarkerWait = 100;
 
 const refVideoConstraints = {
     width: videoWidth,
@@ -156,7 +155,7 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
                     canvasRef.current.width = videoWidth;
                     canvasRef.current.height = videoHeight;
                 }
-            }, 50);
+            }, 500);
         }
         // if (canvasRef.current) {
         //     const ctx = canvasRef.current.getContext('2d');
@@ -184,7 +183,6 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
         };
     }, [isVisable]); // Triggered when isVisable changes
 
-
     /* --- 1. Initialize FaceDetector --- */
     useEffect(() => {
         let isMounted = true; 
@@ -200,7 +198,7 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
             const detector = await FaceDetector.createFromOptions(vision, {
                 baseOptions: {
                     modelAssetPath: faceDectorModel,
-                    delegate: "CPU"
+                    delegate: "GPU"
                 },
                 runningMode: "VIDEO",
                 numFaces: 1
@@ -233,7 +231,7 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
             const landmarker = await FaceLandmarker.createFromOptions(vision, {
                 baseOptions: {
                     modelAssetPath: faceLandmarkerModel,
-                    delegate: "CPU"
+                    delegate: "GPU"
                 },
                 outputFaceBlendshapes: true,
                 runningMode: "VIDEO",
@@ -245,7 +243,7 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
             setTimeout(() => {
                 setStatus({ text: 'ANALYZING', color: '#FFC107' });
                 setIsReady(true); // FaceLandmarker is ready
-            }, facialStepDelay * 10);
+            }, facialStepDelay * 15);
         };
 
         // Only initialize FaceLandmarker AFTER face is detected AND a delay
@@ -311,7 +309,7 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
     if (enableDetectFace && webcamRef.current?.video && faceDetector) {
         startTimeout = setTimeout(() => {
             detectFace();
-        }, 500); // 500ms delay to ensure video is initialized
+        }, 50); // 50ms delay to ensure video is initialized
     }
     
     return () => {
@@ -324,7 +322,6 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
         }
     };
 }, [faceDetector, enableDetectFace, hasCapturedImage, imgSrc]);
-
 
     /* --- 4. Start Landmark Drawing Loop (Conditional) --- */
     useEffect(() => {
@@ -435,7 +432,6 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
               setIsVerified(true);
               setIsAnalyzed(false);
               setStatus({ text: 'SUCCESS', color: '#4CAF50' });
-            //   downloadJsonFile(data, `verification-results-${Date.now()}.json`);
               // Add  delay before setting status
               setTimeout(() => {
                 setActiveComponent('deviceSelection');
@@ -502,18 +498,6 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
   return (
     <>
         <Box id='WebCameraComponent' sx={ isVisable ? styles.cameraBox : styles.cameraBoxDisplayNone }>
-            {/* <Webcam
-                ref={webcamRef}
-                mirrored={false}
-                audio={false}
-                screenshotFormat="image/jpeg"
-                videoConstraints={ refVideoConstraints }
-                style={ isVisable ? styles.webcam : styles.webCamDisplayNone }
-            />
-            <canvas 
-                ref={canvasRef}
-                style={ isVisable ? styles.canvas : styles.canvasDisplayNone }
-            /> */}
             <Webcam
                 ref={webcamRef}
                 mirrored={false}
@@ -537,3 +521,5 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
 }
 
 export default WebCameraComponent;
+
+

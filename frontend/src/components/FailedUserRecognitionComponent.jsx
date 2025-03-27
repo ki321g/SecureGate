@@ -299,28 +299,6 @@ const FailedUserRecognitionComponent = ({ setActiveComponent, setShowFaceDector 
                 </Box>
                 {/* Show Try Again button if attempts are less than MAX_ATTEMPTS */}
                 {attempts === MAX_ATTEMPTS ? (                    
-                    // Show ACCOUNT LOCKED message when MAX_ATTEMPTS is reached
-                    // <Box sx={{
-                    //     padding: '16px 24px',
-                    //     backgroundColor: '#ffebee',
-                    //     border: '2px solid #d32f2f',
-                    //     borderRadius: '4px',
-                    //     textAlign: 'center'
-                    // }}>
-                    //     <Typography 
-                    //         variant="h4" 
-                    //         sx={{ 
-                    //             fontWeight: 'bold', 
-                    //             color: '#d32f2f',
-                    //             fontSize: '2rem'
-                    //         }}
-                    //     >
-                    //         ACCOUNT LOCKED
-                    //     </Typography>
-                    //     <Typography sx={{ color: '#d32f2f', mt: 1 }}>
-                    //         Please contact an administrator
-                    //     </Typography>
-                    // </Box>
                     <Box sx={{
                         padding: '16px 24px',
                         backgroundColor: '#ffebee',
