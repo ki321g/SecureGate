@@ -10,9 +10,11 @@ https://codepen.io/mediapipe-preview/pen/OJByWQr
  * https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker/web_js#video
  */
 import React, { useRef, useEffect, useState } from 'react';
+import axios from 'axios';
+import { useNavigate, useLocation } from 'react-router-dom';
+
 import { Box } from '@mui/material';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, List, ListItem, ListItemText, Divider } from '@mui/material';
-import axios from 'axios';
 
 // Import: Video Processing Libraries
 import Webcam from 'react-webcam'
@@ -25,6 +27,7 @@ import {
         } from "@mediapipe/tasks-vision"
 
 //Context 
+import { useAuth } from '../contexts/authContext';
 import { useCamera } from '../contexts/cameraContext'; 
 import { useCardUID } from '../contexts/cardUidContext';
 import { useUser } from '../contexts/userContext';
@@ -117,6 +120,9 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
     const [isVerified, setIsVerified] = useState(null);  
     const [isAnalyzed, setIsAnalyzed] = useState(null);
     const [verificationData, setVerificationData] = useState(null);
+
+    const { authenticate, isAuthenticated } = useAuth();
+    const navigate = useNavigate();
 
     /* --- useEffect's for use with Facial Detection and Landmark Detection ---*/
     /* 
@@ -427,14 +433,26 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
               setIsVerified(false);
               return
             }
-            // if isVerified key is true 
+            // if isVerified key is true  authenticate
             if (data.verified === true) {
               setIsVerified(true);
               setIsAnalyzed(false);
               setStatus({ text: 'SUCCESS', color: '#4CAF50' });
+
+              await authenticate(user.uid, user.roles.role_name);
+              
+              const isAdminRole = user.roles.role_name.toLowerCase() === 'admin';
+              const isCleanerRole = user.roles.role_name.toLowerCase() === 'cleaner';
+              
               // Add  delay before setting status
               setTimeout(() => {
-                setActiveComponent('deviceSelection');
+                if (isAdminRole) {
+                    navigate('/dashboard');
+                } else if (isCleanerRole) {
+                    setActiveComponent('cleanerSelection');
+                } else {
+                    setActiveComponent('deviceSelection');
+                }
               }, facialStepDelay * 15); 
             }
             // if isVerified key is false

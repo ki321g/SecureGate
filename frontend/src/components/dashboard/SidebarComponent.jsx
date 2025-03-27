@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // Material UI Components
 import { 
@@ -27,6 +28,9 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import LogoutIcon from '@mui/icons-material/Logout';
+
+// Auth Context
+import { useAuth } from '../../contexts/authContext';
 
 // Custom Components
 import NavItem from './NavItemComponent';
@@ -127,11 +131,14 @@ const NAVIGATION = [
 ];
 
 const SidebarComponent = ({ drawerWidth, mobileOpen, handleDrawerToggle, onSelectItem }) => {
-  
+    const { logout } = useAuth();
+    const navigate = useNavigate();
+
   const handleLogout = () => {
-    alert('Logging out...');
-    console.log('Logging out...');
+    logout();
+    navigate('/');
   };
+
   const drawer = (
     <Box sx={{ 
       height: '100%', 
