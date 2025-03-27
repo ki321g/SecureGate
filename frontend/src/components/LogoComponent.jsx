@@ -11,12 +11,12 @@ const styles = {
     alignItems: 'center'
   },
   securityIcon: {
-    fontSize: 250,
+    fontSize: 400,
     color: 'primary.main'
   },
   headerText: {
     mt: 0,
-    fontSize: 140,
+    fontSize: 200,
     color: 'text.primary',
     alignItems: 'center',
     fontWeight: '900',
@@ -24,7 +24,7 @@ const styles = {
   },
   subHeaderText: {
     mt: -3,
-    fontSize: 50,
+    fontSize: 70,
     color: 'text.secondary',
     alignItems: 'center',
     fontWeight: '700'

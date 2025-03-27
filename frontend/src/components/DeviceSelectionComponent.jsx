@@ -60,7 +60,7 @@ const styles = {
     marginBottom: '20px', 
   },    
   deviceItem: {
-    padding: '8px 12px',
+    padding: '2px 12px',
     margin: '2px 0',
     borderRadius: '4px',
     display: 'flex',
@@ -482,6 +482,8 @@ const DeviceSelectionComponent = ({ setActiveComponent }) => {
                           <FormControlLabel
                             control={
                               <Checkbox 
+                                // size="large"
+                                sx={{ '& .MuiSvgIcon-root': { fontSize: 36 } }}
                                 checked={selectedDevices.includes(device.deviceid)}
                                 onChange={() => toggleDeviceSelection(device.deviceid)}
                               />

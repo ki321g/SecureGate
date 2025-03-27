@@ -145,7 +145,7 @@ const resetWebcamComponent = () => {
                             mt: 0, 
                             color: 'text.secondary',
                             animation: 'pulse 2s infinite',
-                            fontSize: '6rem',
+                            fontSize: '10rem',
                             fontWeight: '900'
                         }}
                     >
