@@ -143,7 +143,10 @@ const EnterPinComponent = ({ setEnableDetectFace, setActiveComponent }) => {
         <Box sx={styles.container}>
             <Box>
                 <Box sx={styles.header}>
-                    <Typography variant="h4" sx={styles.title}>
+                    <Typography 
+                        variant="h4"
+                        sx={styles.title}
+                    >
                         Enter PIN
                     </Typography>
                     <Typography variant="subtitle1" sx={styles.subtitle}>

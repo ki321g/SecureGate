@@ -144,10 +144,12 @@ const resetWebcamComponent = () => {
                         sx={{ 
                             mt: 0, 
                             color: 'text.secondary',
-                            animation: 'pulse 2s infinite'
+                            animation: 'pulse 2s infinite',
+                            fontSize: '6rem',
+                            fontWeight: '900'
                         }}
                     >
-                        CLICK SCREEN TO START
+                        TAP SCREEN 
                     </Typography>
                 </Box>
             </Container>

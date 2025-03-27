@@ -117,7 +117,6 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
     const [hasCapturedImage, setHasCapturedImage] = useState(false);    
     const [isVerified, setIsVerified] = useState(null);  
     const [isAnalyzed, setIsAnalyzed] = useState(null);
-    const [openDialog, setOpenDialog] = useState(false);
     const [verificationData, setVerificationData] = useState(null);
 
     /* --- useEffect's for use with Facial Detection and Landmark Detection ---*/
@@ -141,7 +140,6 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
         setHasCapturedImage(false);
         setIsVerified(null);
         setIsAnalyzed(null);
-        setOpenDialog(false);
         setVerificationData(null);
     
         // Clear the canvas if it exists
@@ -263,27 +261,42 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
         let isMounted = true;
         let animationFrame;
         let localHasCaptured = hasCapturedImage; // Create a local variable
-    
+        
         const detectFace = async () => {
             if (!isMounted) return;
-    
-            // Add a check to ensure faceDetector is not null
+            
+            // Add checks for video dimensions and readiness
             if (enableDetectFace && webcamRef.current?.video && faceDetector) {
                 const video = webcamRef.current.video;
-                const results = faceDetector.detectForVideo(video, performance.now());
-                if (results.detections.length > 0) {
-                    setFaceDetected(true);
-                    // Only capture and download if we haven't already done so
-                    if (!localHasCaptured) {
-                        const imageSrc = webcamRef.current.getScreenshot();
-                        setImgSrc(imageSrc);
-                        localHasCaptured = true; // Set local variable to true
-                        setHasCapturedImage(true);
-                        await verify(imageSrc);
-                    };
-                    setDetectingFace(false); // Stop showing "Face Not Detected"
-                } else {
-                    setFaceDetected(false);
+                
+                // Add this check to ensure video has valid dimensions before processing
+                if (video.videoWidth <= 0 || video.videoHeight <= 0 || !video.readyState || video.readyState < 2) {
+                    // Video not ready yet, try again in the next frame
+                    if (isMounted) {
+                        animationFrame = requestAnimationFrame(detectFace);
+                    }
+                    return;
+                }
+                
+                try {
+                    const results = faceDetector.detectForVideo(video, performance.now());
+                    if (results.detections.length > 0) {
+                        setFaceDetected(true);
+                        // Only capture and download if we haven't already done so
+                        if (!localHasCaptured) {
+                            const imageSrc = webcamRef.current.getScreenshot();
+                            setImgSrc(imageSrc);
+                            localHasCaptured = true; // Set local variable to true
+                            setHasCapturedImage(true);
+                            await verify(imageSrc);
+                        };
+                        setDetectingFace(false); // Stop showing "Face Not Detected"
+                    } else {
+                        setFaceDetected(false);
+                    }
+                } catch (error) {
+                    console.error("Face detection error:", error);
+                    // Continue trying despite errors
                 }
             }
             
@@ -293,64 +306,25 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
             }
         };
     
-        // Initial detection start after card is read - only if detector is initialized
-        if (enableDetectFace && webcamRef.current?.video && faceDetector) {
-          detectFace();
+    // Add a delay before starting face detection to ensure video is ready
+    let startTimeout;
+    if (enableDetectFace && webcamRef.current?.video && faceDetector) {
+        startTimeout = setTimeout(() => {
+            detectFace();
+        }, 500); // 500ms delay to ensure video is initialized
+    }
+    
+    return () => {
+        isMounted = false;
+        if (animationFrame) {
+            cancelAnimationFrame(animationFrame);
         }
-    
-        return () => {
-            isMounted = false;
-            if (animationFrame) {
-                cancelAnimationFrame(animationFrame);
-            }
-        };
-    }, [faceDetector, enableDetectFace, hasCapturedImage, imgSrc]);
-    
-    // useEffect(() => {
-    //     let isMounted = true;
-    //     let animationFrame;
-    //     let localHasCaptured = hasCapturedImage; // Create a local variable
+        if (startTimeout) {
+            clearTimeout(startTimeout);
+        }
+    };
+}, [faceDetector, enableDetectFace, hasCapturedImage, imgSrc]);
 
-
-    //     const detectFace = async () => {
-    //         if (!isMounted) return;
-
-    //         if (enableDetectFace && webcamRef.current?.video) {
-    //             const video = webcamRef.current.video;
-    //             const results = faceDetector.detectForVideo(video, performance.now());
-    //             if (results.detections.length > 0) {
-    //                 setFaceDetected(true);
-    //                 // Only capture and download if we haven't already done so
-    //                 if (!localHasCaptured) {
-    //                     const imageSrc = webcamRef.current.getScreenshot();
-    //                     setImgSrc(imageSrc);
-    //                     localHasCaptured = true; // Set local variable to true
-    //                     setHasCapturedImage(true);
-    //                     await verify(imageSrc);
-    //                     // downloadBase64File(imageSrc, 'txt'); 
-    //                 };
-    //                 setDetectingFace(false); // Stop showing "Face Not Detected"
-    //             } else {
-    //                 setFaceDetected(false);
-    //             }
-    //         }
-    //         if (enableDetectFace && isMounted) {
-    //             animationFrame = requestAnimationFrame(detectFace);
-    //         }
-    //     };
-
-    //     // Initial detection start after card is read
-    //     if (enableDetectFace && webcamRef.current?.video) {
-    //       detectFace();
-    //     }
-
-    //     return () => {
-    //         isMounted = false;
-    //         if (animationFrame) {
-    //             cancelAnimationFrame(animationFrame);
-    //         }
-    //     };
-    // }, [faceDetector, enableDetectFace, hasCapturedImage, imgSrc]); // Triggered when faceDetector enableDetectFace or hasCapturedImage changes
 
     /* --- 4. Start Landmark Drawing Loop (Conditional) --- */
     useEffect(() => {
@@ -450,8 +424,6 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
             
             // Store the verification data for display
             setVerificationData(data);
-            // Open the dialog to show results
-            // setOpenDialog(true);
     
             if (response.status !== 200) {
               console.log(data.error);
@@ -483,7 +455,6 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
           console.error('Exception while verifying image:', error);
           // Show error in dialog
           setVerificationData({ error: error.message });
-        //   setOpenDialog(true);
         }
     
       };
@@ -496,12 +467,6 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
         link.download = filename || `verification-results-${Date.now()}.json`;
         link.click();
       };
-
-
-    // Add a function to handle dialog close
-    const handleCloseDialog = () => {
-        setOpenDialog(false);
-    };
 
     /* --- Draw Face Landmark Results Function --- */
     const drawResults = (ctx, results) => {
@@ -537,7 +502,7 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
   return (
     <>
         <Box id='WebCameraComponent' sx={ isVisable ? styles.cameraBox : styles.cameraBoxDisplayNone }>
-            <Webcam
+            {/* <Webcam
                 ref={webcamRef}
                 mirrored={false}
                 audio={false}
@@ -548,78 +513,25 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
             <canvas 
                 ref={canvasRef}
                 style={ isVisable ? styles.canvas : styles.canvasDisplayNone }
+            /> */}
+            <Webcam
+                ref={webcamRef}
+                mirrored={false}
+                audio={false}
+                screenshotFormat="image/jpeg"
+                videoConstraints={refVideoConstraints}
+                style={isVisable ? styles.webcam : styles.webCamDisplayNone}
+                onUserMedia={() => {
+                    // This ensures we only start processing after the camera is actually ready
+                    console.log("Camera is ready and streaming");
+                }}
             />
+            
+            <canvas 
+                ref={canvasRef}
+                style={ isVisable ? styles.canvas : styles.canvasDisplayNone }
+            /> 
         </Box>
-
-         
-            {/* Verification Results Dialog */}
-            <Dialog
-                open={openDialog}
-                onClose={handleCloseDialog}
-                aria-labelledby="verification-dialog-title"
-                maxWidth="md"
-            >
-                <DialogTitle id="verification-dialog-title">
-                    Face Verification Results
-                </DialogTitle>
-                <DialogContent>
-                    {verificationData && (
-                        <List>
-                            <ListItem>
-                                <ListItemText 
-                                    primary="Verification Status" 
-                                    secondary={verificationData.verified ? "✅ Verified" : "❌ Not Verified"} 
-                                    secondaryTypographyProps={{ 
-                                        color: verificationData.verified ? "success.main" : "error.main",
-                                        fontWeight: "bold" 
-                                    }}
-                                />
-                            </ListItem>
-                            <Divider />
-                            {verificationData.model && (
-                                <ListItem>
-                                    <ListItemText primary="Model Used" secondary={verificationData.model} />
-                                </ListItem>
-                            )}
-                            {verificationData.detector_backend && (
-                                <ListItem>
-                                    <ListItemText primary="Detector" secondary={verificationData.detector_backend} />
-                                </ListItem>
-                            )}
-                            {verificationData.distance && (
-                                <ListItem>
-                                    <ListItemText 
-                                        primary="Distance Score" 
-                                        secondary={verificationData.distance.toFixed(4)} 
-                                    />
-                                </ListItem>
-                            )}
-                            {verificationData.threshold && (
-                                <ListItem>
-                                    <ListItemText primary="Threshold" secondary={verificationData.threshold.toFixed(4)} />
-                                </ListItem>
-                            )}
-                            {verificationData.error && (
-                                <ListItem>
-                                    <ListItemText 
-                                        primary="Error" 
-                                        secondary={verificationData.error} 
-                                        secondaryTypographyProps={{ color: "error.main" }}
-                                    />
-                                </ListItem>
-                            )}
-                            {/* Add more fields as needed based on your API response */}
-                        </List>
-                    )}
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseDialog} color="primary">
-                        Close
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-
     </>
   );
 }
