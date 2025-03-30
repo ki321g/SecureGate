@@ -24,6 +24,8 @@ import {
 // import { MaterialReactTable } from 'material-react-table';
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
 
+import AddUserComponent from './AddUserComponent';
+
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -51,6 +53,9 @@ const UsersContent = () => {
   const [selectedUserForImage, setSelectedUserForImage] = useState(null);
   const [isCardReading, setIsCardReading] = useState(false);
   const [cardReadingInterval, setCardReadingInterval] = useState(null);
+
+  const [showAddUserForm, setShowAddUserForm] = useState(false);
+
 
   
   // Modal State  
@@ -332,23 +337,39 @@ const UsersContent = () => {
   
   // Handle add
   const handleAdd = () => {
+    // setModalState({
+    //   isOpen: true,
+    //   mode: 'add',
+    //   selectedUser: null,
+    //   formData: {
+    //     first_name: '',
+    //     last_name: '',
+    //     email: '',
+    //     password: '',
+    //     phone_number: '',
+    //     role_id: '',
+    //     card_id: '',
+    //     user_picture: null,
+    //     status: 'Active',
+    //   }
+    // });
+    
     setModalState({
       isOpen: true,
       mode: 'add',
       selectedUser: null,
-      formData: {
-        first_name: '',
-        last_name: '',
-        email: '',
-        password: '',
-        phone_number: '',
-        role_id: '',
-        card_id: '',
-        user_picture: null,
-        status: 'Active',
-      }
+      formData: {} // We don't need this anymore as the form data is managed in the AddUserComponent
     });
+    
+    
   };
+
+  const handleUserAdded = (newUser) => {
+    // Close the modal
+    handleCloseModal();
+  };
+
+  
 
   // Handle edit
   const handleEdit = (row) => {
@@ -530,143 +551,10 @@ const UsersContent = () => {
     if (mode === 'add') {
       return (
         <>
-          <DialogTitle sx={{ fontSize: '1.8rem' }}>
-            Add New User
-          </DialogTitle>
-          <DialogContent>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="First Name"
-                  name="first_name"
-                  value={formData.first_name}
-                  onChange={handleInputChange}
-                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Last Name"
-                  name="last_name"
-                  value={formData.last_name}
-                  onChange={handleInputChange}
-                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Password"
-                  name="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Phone Number"
-                  name="phone_number"
-                  value={formData.phone_number}
-                  onChange={handleInputChange}
-                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <FormControl fullWidth>
-                  <InputLabel id="role-select-label" sx={{ fontSize: '1.4rem' }}>Role</InputLabel>
-                  <Select
-                    labelId="role-select-label"
-                    name="role_id"
-                    value={formData.role_id}
-                    onChange={handleInputChange}
-                    label="Role"
-                    sx={{ '& .MuiSelect-select': { fontSize: '1.4rem' } }}
-                  >
-                    {roles.map((role) => (
-                      <MenuItem key={role.role_id} value={role.role_id}>
-                        {role.role_name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              {/* <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Card UID"
-                  name="card_id"
-                  value={formData.card_id}
-                  onChange={handleInputChange}
-                  sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
-                />
-              </Grid> */}
-
-              <Grid item xs={6}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <TextField
-                    // fullWidth
-                    label="Card UID"
-                    name="card_id"
-                    value={formData.card_id}
-                    onChange={handleInputChange}
-                    sx={{ '& .MuiInputBase-input': { fontSize: '1.4rem' } }}
-                  />
-                  <Button
-                    variant="contained"
-                    onClick={isCardReading ? stopCardReading : startCardReading}
-                    sx={{ 
-                      minWidth: '120px',
-                      fontSize: '1.1rem',
-                      backgroundColor: isCardReading ? 'error.main' : 'primary.main'
-                    }}
-                  >
-                    {isCardReading ? 'Stop Scan' : 'Scan Card'}
-                  </Button>
-                </Box>
-                {isCardReading && (
-                  <Typography sx={{ mt: 1, color: 'info.main', fontSize: '1.2rem' }}>
-                    Please scan a card now...
-                  </Typography>
-                )}
-              </Grid>
-
-
-
-
-
-            </Grid>
-          </DialogContent>
-          <DialogActions>
-            <Button 
-              onClick={handleCloseModal} 
-              sx={{ fontSize: '1.2rem' }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCreate} 
-              variant="contained" 
-              sx={{ fontSize: '1.2rem' }}
-            >
-              Create User
-            </Button>
-          </DialogActions>
+        <AddUserComponent 
+          onUserAdded={handleUserAdded} 
+          onCancel={handleCloseModal} 
+        />
         </>
       );
     }
@@ -1037,6 +925,13 @@ const UsersContent = () => {
           </Button>
         </Box>
       </Box>
+
+      {/* {showAddUserForm && (
+        <AddUserForm 
+          onComplete={() => setShowAddUserForm(false)} 
+          onCancel={handleCancelAddUser} 
+        />
+      )} */}
 
       {/* Use the table instance with the new API */}
       <MaterialReactTable table={table} />

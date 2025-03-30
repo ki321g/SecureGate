@@ -16,6 +16,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Box } from '@mui/material';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, List, ListItem, ListItemText, Divider } from '@mui/material';
 
+// API
+import { accessLogsApi } from '../api/supabase/supabaseApi';
+
 // Import: Video Processing Libraries
 import Webcam from 'react-webcam'
 import {
@@ -405,9 +408,6 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
                 anti_spoofing: deepFaceAntiSpoofing,
               }
             );
-    
-            // console.log(`calling service endpoint ${deepFaceServiceEndpoint}/verify`)
-            
             
             const response = await fetch(`${deepFaceServiceEndpoint}/verify`, {
               method: 'POST',
@@ -419,12 +419,6 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
     
             const data = await response.json();
 
-            // console.log('response: ', response);
-            // console.log('data: ', data);
-            // Save verification results to file
-            // downloadJsonFile(data, `verification-results-${Date.now()}.json`);
-    
-            
             // Store the verification data for display
             setVerificationData(data);
     
@@ -438,6 +432,14 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
               setIsVerified(true);
               setIsAnalyzed(false);
               setStatus({ text: 'SUCCESS', color: '#4CAF50' });
+
+                // Log successful access attempt
+                await accessLogsApi.create({
+                    user_id: user.uid,
+                    user_picture: imageSrc,
+                    success: 'TRUE',
+                    notes: 'Facial Recognition Verification Successful'
+                });
 
               await authenticate(user.uid, user.roles.role_name);
               
@@ -455,10 +457,20 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
                 }
               }, facialStepDelay * 15); 
             }
+
             // if isVerified key is false
             if (data.verified === false) {
                 setIsVerified(false);
                 setStatus({ text: 'FAILED', color: '#F44336' });
+            
+                // Log failed access attempt
+                await accessLogsApi.create({
+                    user_id: user.uid,
+                    user_picture: imageSrc,
+                    success: 'FALSE',
+                    notes: 'Facial Recognition Verification Failed'
+                });
+
                 setTimeout(() => {
                     setActiveComponent('failedUserRecognition');
                 }, facialStepDelay * 15);
@@ -469,6 +481,18 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
           console.error('Exception while verifying image:', error);
           // Show error in dialog
           setVerificationData({ error: error.message });
+      
+          // Log error in access logs
+          try {
+            await accessLogsApi.create({
+                user_id: user.uid,
+                user_picture: imageSrc,
+                success: 'FALSE',
+                notes: `Error during facial verification: ${error.message}`
+            });
+          } catch (logError) {
+            console.error('Failed to log error:', logError);
+          }
         }
     
       };

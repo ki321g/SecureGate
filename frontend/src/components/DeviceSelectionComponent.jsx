@@ -27,7 +27,7 @@ import { useUser } from '../contexts/userContext';
 import { useData } from '../contexts/dataContext';
 
 // API
-import { functionApi, failedAttemptsApi } from '../api/supabase/supabaseApi'
+import { functionApi, failedAttemptsApi, deviceLogsApi } from '../api/supabase/supabaseApi'
 
 // API key and base URL from environment variables
 const API_KEY = import.meta.env.VITE_BACKEND_API_KEY;
@@ -317,10 +317,32 @@ const DeviceSelectionComponent = ({ setActiveComponent }) => {
                 'Content-Type': 'application/json'
               }
             });
+          
+            // Log the device turn on action to Supabase
+            await deviceLogsApi.create({
+              device_id: device.device_id, // Use the device_id from your database, not the deviceid from Tuya
+              user_id: user.uid,
+              action: 'TURN_ON',
+              status: 'TRUE',
+              notes: `Device ${device.device_name} turned ON`
+            });
             
             newStatus[deviceId] = 'ON';
           } catch (err) {
             console.error(err);
+          
+            // Log the failed attempt
+            const device = devices.find(d => d.deviceid === deviceId);
+            if (device) {
+              await deviceLogsApi.create({
+                device_id: device.device_id,
+                user_id: user.uid,
+                action: 'FAILED',
+                status: 'FALSE',
+                notes: `Failed to turn ON device ${device.device_name}: ${err.message}`
+              });
+            }
+
             newStatus[deviceId] = 'ERROR';
           }
         })
@@ -353,6 +375,8 @@ const DeviceSelectionComponent = ({ setActiveComponent }) => {
           try {
             const device = devices.find(d => d.deviceid === deviceId);
             if (!device) throw new Error(`Device not found: ${deviceId}`);
+
+            console("Device", device)
             
             const response = await axios.get(`${API_BASE_URL}/tinytuya/turnoff/${device.deviceid}`, {
               headers: {
@@ -360,10 +384,32 @@ const DeviceSelectionComponent = ({ setActiveComponent }) => {
                 'Content-Type': 'application/json'
               }
             });
+          
+            // Log the device turn off action to Supabase
+            await deviceLogsApi.create({
+              device_id: device.device_id, 
+              user_id: user.uid,
+              action: 'TURN_OFF',
+              status: 'TRUE',
+              notes: `Device ${device.device_name} turned OFF`
+            });
             
             newStatus[deviceId] = 'OFF';
           } catch (err) {
             console.error(err);
+          
+            // Log the failed attempt
+            const device = devices.find(d => d.deviceid === deviceId);
+            if (device) {
+              await deviceLogsApi.create({
+                device_id: device.device_id,
+                user_id: user.uid,
+                action: 'FAILED',
+                status: 'FALSE',
+                notes: `Failed to turn OFF device ${device.device_name}: ${err.message}`
+              });
+            };
+
             newStatus[deviceId] = 'ERROR';
           }
         })

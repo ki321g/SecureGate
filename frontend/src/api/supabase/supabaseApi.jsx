@@ -335,11 +335,26 @@ export const failedAttemptsApi = {
     }
     
     // Record exists, increment the failed count
+    const newFailedCount = existingRecord.failed + 1
+
     const { data, error } = await supabase
       .from('failed_attempts')
-      .update({ failed: existingRecord.failed + 1 })
+      .update({ failed: newFailedCount })
       .eq('user_id', userId)
       .select()
+
+    // If failed attempts reach 3, disable the user
+    if (newFailedCount >= 3) {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .update({ status: 'Disabled' })
+        .eq('uid', userId)
+        .select()
+      
+      if (userError) {
+        console.error('Error disabling user:', userError)
+      }
+    }
     
     return { data, error }
   },  
