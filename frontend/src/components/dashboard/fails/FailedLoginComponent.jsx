@@ -109,26 +109,6 @@ const FailedLoginComponent = () => {
     }
   };
 
-  // Render a placeholder when no user is selected to maintain consistent height
-  const renderPlaceholder = () => (
-    <Grid container spacing={2} sx={{ width: '100%' }}>
-      <Grid item xs={12} md={4}>
-        <Paper sx={{ p: 3, height: '100%', minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Typography variant="body1" color="textSecondary">
-            Select a user to view details
-          </Typography>
-        </Paper>
-      </Grid>
-      <Grid item xs={12} md={8}>
-        <Paper sx={{ p: 3, minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Typography variant="body1" color="textSecondary">
-            Access logs will appear here
-          </Typography>
-        </Paper>
-      </Grid>
-    </Grid>
-  );
-
   return (
     <Box sx={{ width: '100%', p: 2, minHeight: '600px' }}>
       <Typography variant="h4" gutterBottom fontWeight="bold">
@@ -136,7 +116,7 @@ const FailedLoginComponent = () => {
       </Typography>
       
       {/* User Selection Dropdown - Full Width with consistent size */}
-      {failedAttempts.length > 0 && (
+      {!loading && failedAttempts.length > 0 && (
         <Paper sx={{ p: 2, mb: 3, width: '100%' }}>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={8}>
@@ -150,9 +130,10 @@ const FailedLoginComponent = () => {
                   label="Select a user with failed login attempts"
                   sx={{ height: '56px', fontSize: '1.6rem', padding: '40px 0' }}
                 >
-                  <MenuItem value="">-- Select a user --</MenuItem>
+                  {/* <MenuItem value="">-- Select a user --</MenuItem> */}
                   {failedAttempts.map((item) => (
-                    <MenuItem key={item.id || item.user_id} value={item.id || item.user_id}>
+                    <MenuItem key={item.id || item.user_id} value={item.id || item.user_id}
+                    sx={{ height: '56px', fontSize: '1.6rem', padding: '20px' }}>
                       {item.users?.first_name} {item.users?.last_name} ({item.failed} failed {item.failed === 1 ? 'attempt' : 'attempts'})
                     </MenuItem>
                   ))}
@@ -348,8 +329,7 @@ const FailedLoginComponent = () => {
           </Grid>
         </Grid>
       ) : (
-        // Render placeholder when no user is selected
-        renderPlaceholder()
+        <></>
       )}
     </Box>
   );
