@@ -28,6 +28,7 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ErrorIcon from '@mui/icons-material/Error';
 
 // Auth Context
 import { useAuth } from '../../contexts/authContext';
@@ -88,7 +89,7 @@ const NAVIGATION = [
       kind: 'divider',
   },
   {
-    segment: '/devices', // Example path
+    segment: '/devices', 
     title: 'DEVICES',
     icon: <ImportantDevicesIcon />,
   },
@@ -96,7 +97,7 @@ const NAVIGATION = [
       kind: 'divider',
   },
   {
-    segment: '/roles', // Example path
+    segment: '/roles', 
     title: 'ROLES',
     icon: <BadgeIcon />,
   },
@@ -104,7 +105,7 @@ const NAVIGATION = [
       kind: 'divider',
   },
   {
-    segment: '/users', // Example path
+    segment: '/users', 
     title: 'USERS',
     icon: <GroupIcon />,
   },
@@ -112,7 +113,7 @@ const NAVIGATION = [
       kind: 'divider',
   },
   {
-    segment: '/logs', // Example path
+    segment: '/logs', 
     title: 'LOGS',
     icon: <ListAltIcon />,
     children: [
@@ -127,6 +128,14 @@ const NAVIGATION = [
         icon: <DevicesOtherIcon />,
       },
     ],
+  },
+  {
+      kind: 'divider',
+  },
+  {
+    segment: '/fails', 
+    title: 'FAILED LOGIN',
+    icon: <ErrorIcon />,
   },
 ];
 

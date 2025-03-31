@@ -17,8 +17,9 @@ import RolesContent from '../components/dashboard/roles/RolesContent';
 import AccessLogsContent from '../components/dashboard/logs/AccessLogsContent';
 import DeviceLogsContent from '../components/dashboard/logs/DeviceLogsContent';
 import DashboardContent from '../components/dashboard/DashboardContent';
+import FailedLoginComponent from '../components/dashboard/fails/FailedLoginComponent';
 
-const drawerWidth = 320;
+const drawerWidth = 340;
 
 const styles = {  
   headerText: {
@@ -39,14 +40,16 @@ function SidebarContent({selectedItem}){
       return <DevicesContent />;
   } else if (selectedItem === '/roles') {
       return <RolesContent />;
-  }else if (selectedItem === '/logs') {
+  } else if (selectedItem === '/logs') {
       return <LogsContent />;
     }else if (selectedItem === '/logs/access') {
         return <AccessLogsContent />;
       }else if (selectedItem === '/logs/device') {
           return <DeviceLogsContent />;
-  }else if (selectedItem === '/users') {
+  } else if (selectedItem === '/users') {
       return <UsersContent />;
+  } else if (selectedItem === '/fails') {
+      return <FailedLoginComponent />;
   }
   return <DashboardContent />;
 }
