@@ -595,38 +595,18 @@ const RolesContent = () => {
         </Box>
       );
     },
-    
-    // renderRowActions: ({ row }) => (
-    //   <Box sx={{ display: 'flex', gap: '2px' }}>
-    //   <Tooltip title="Assign Devices">
-    //     <IconButton 
-    //       onClick={() => handleOpenDeviceModal(row.original)}
-    //       sx={{ fontSize: '2rem', color: 'primary.main' }}>
-    //       <DevicesIcon fontSize="inherit"/>
-    //     </IconButton>
-    //   </Tooltip>
-    //     <Tooltip title="Edit">
-    //       <IconButton 
-    //         onClick={() => handleEdit(row)}
-    //         sx={{ fontSize: '2rem' }}>
-    //         <EditIcon fontSize="inherit"/>
-    //       </IconButton>
-    //     </Tooltip>
-    //     <Tooltip title="Delete">
-    //       <IconButton 
-    //         color="error" 
-    //         onClick={() => handleDelete(row)}
-    //         sx={{ fontSize: '2rem' }}>
-    //         <DeleteIcon fontSize="inherit"/>
-    //       </IconButton>
-    //     </Tooltip>
-    //   </Box>
-    // ),
     muiTableHeadCellProps: {
       sx: {
         fontSize: '1.4rem',
         fontWeight: 'bold',
         backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.04)'
+      }
+    },
+    muiBottomToolbarProps: {
+      sx: {
+        '& .MuiBox-root': {
+          padding: '4px 8px 0 0!important',
+        }
       }
     }
   });

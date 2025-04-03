@@ -895,6 +895,13 @@ const UsersContent = () => {
         fontWeight: 'bold',
         backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.04)'
       }
+    },
+    muiBottomToolbarProps: {
+      sx: {
+        '& .MuiBox-root': {
+          padding: '4px 8px 0 0!important',
+        }
+      }
     }
   });
   
