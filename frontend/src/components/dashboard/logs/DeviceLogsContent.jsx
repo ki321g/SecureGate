@@ -235,10 +235,10 @@ const DeviceLogsContent = () => {
       showLastButton: true, 
       sx: {
         '& .MuiPaginationItem-root': {
-          fontSize: '2.4rem', // Larger font size for pagination items
+          fontSize: '1.8rem', // Larger font size for pagination items
         },
         '& .MuiSvgIcon-root': {
-          fontSize: '4rem', // Larger icons for first/last/next/prev buttons
+          fontSize: '2.8rem', // Larger icons for first/last/next/prev buttons
         }
       }
     },
@@ -253,7 +253,14 @@ const DeviceLogsContent = () => {
       sx: {
         '& .MuiBox-root': {
           padding: '4px 8px 0 0!important',
+          overflowX: 'hidden'
         }
+      }
+    },
+    muiTableContainerProps: {
+      sx: {
+        minWidth: '100%',
+        overflowX: 'hidden'
       }
     } 
   });

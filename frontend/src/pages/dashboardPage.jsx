@@ -101,7 +101,8 @@ const DashboardPage = () => {
           // sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
           sx={{ 
             flexGrow: 1, 
-            p: 12, 
+            py: 12,
+            px: 0,
             width: { sm: `calc(100% - ${drawerWidth}px)` },
             display: 'flex',
             flexDirection: 'column',
