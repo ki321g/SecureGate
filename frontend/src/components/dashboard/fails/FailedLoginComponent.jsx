@@ -169,7 +169,9 @@ const FailedLoginComponent = () => {
           </Typography>
         </Paper>
       ) : selectedUser ? (
-        <Grid container spacing={3} sx={{ width: '100%' }}>
+        <Grid container spacing={3} sx={{ 
+                                      // width: '100%' 
+                                      }}>
           {/* Left Column: User Details */}
           <Grid item xs={12} md={4}>
             <Paper sx={{ p: 3, height: '100%', minHeight: '400px' }}>

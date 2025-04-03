@@ -7,6 +7,12 @@ import axios from 'axios';
 const API_KEY = import.meta.env.VITE_BACKEND_API_KEY;
 const API_BASE_URL = import.meta.env.VITE_BACKEND_API_BASE_URL;
 
+// Import DataContext
+import { useUser } from '../contexts/userContext';// API
+
+// API
+import { failedAttemptsApi } from '../api/supabase/supabaseApi'
+
 const COUNT_DOWN = 10; // or use: import.meta.env.VITE_SUCCESS_COUNT_DOWN
 
 const styles = {
@@ -66,6 +72,39 @@ const CleanerComponent = ({ setActiveComponent, setShowFaceDector }) => {
 	const [expanded, setExpanded] = useState(false);
 	const [countdown, setCountdown] = useState(COUNT_DOWN);
 	const [message, setMessage] = useState('Door Opened!');
+	const { user } = useUser();
+  
+	useEffect(() => {
+	  const initializeComponent = async () => {
+		try {
+		  // Reset facial recognition attempts
+		  await deleteFailedAttemptsInDatabase(user.uid);
+  
+		} catch (err) {
+		  console.error("Initialization error:", err);
+		  setError("Failed to initialize. Please try again.");
+		}
+	  };
+  
+	  initializeComponent();
+  
+	}, [user.uid]);
+  
+	// function to delete failed attempts in the database
+	const deleteFailedAttemptsInDatabase = async () => {
+	  try {
+		const { error } = await failedAttemptsApi.delete(user.uid);
+		
+		if (error) {
+		  console.error('Error deleting failed attempts:', error);
+		} else {
+		  console.log('Failed attempts record deleted successfully');
+		}
+	  } catch (err) {
+		console.error('Failed to delete failed attempts record:', err);
+		// Don't throw here as this isn't critical for the component to function
+	  }
+	};
 
 	// Animation effect when component mounts
 	useEffect(() => {
