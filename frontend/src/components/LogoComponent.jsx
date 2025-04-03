@@ -17,7 +17,6 @@ const styles = {
   headerText: {
     mt: 0,
     fontSize: 200,
-    color: 'text.primary',
     alignItems: 'center',
     fontWeight: '900',
     color: 'primary.main'

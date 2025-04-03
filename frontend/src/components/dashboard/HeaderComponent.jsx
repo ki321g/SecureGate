@@ -12,7 +12,6 @@ const styles = {
     mt: 0,
     ml: 1,
     fontSize: '4rem',
-    color: 'text.primary',
     alignItems: 'center',
     fontWeight: '900',
     color: 'primary.main'

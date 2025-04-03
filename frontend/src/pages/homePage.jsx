@@ -154,23 +154,13 @@ const resetWebcamComponent = () => {
                 </Box>
             </Container>
             </Box>
-            // <Box id='LogoMainBox' sx={ styles.logoMainBox }>
-            // <Container id='LogoContainer' maxWidth="lg">
-            //     <Box id='LogoContentBox' sx={ styles.logoContentBox }>
-            //         {/* Logo Component */}
-            //         <LogoComponent id='LogoComponent' />
-            //         {/* WebCameraComponent: Video and Canvas  */}
-            //         <WebCameraObjectDectionComponent setShowFaceDector={setShowFaceDector} isVisable={ false } />
-            //     </Box>
-            // </Container>
-            // </Box>
         )}
         {/* Face Detection - Person Object has been dected */}
         {showFaceDector && (
         // {showFaceDector && toggleButton && (
             <Box id='DetectorMainBox' sx={ styles.detectorMainBox}>
                 <Container id='DetectorContainer' maxWidth={false} disableGutters sx={ styles.detectorMainContainer }>
-                    <Stack id='DetectorStack' direction="row" spacing={2} spacing={3} sx={ styles.detectorMainStack }>
+                    <Stack id='DetectorStack' direction="row" spacing={3} sx={ styles.detectorMainStack }>
                         {/* Left Column: WebCameraComponent Video and Canvas */}
                         {/* <WebCameraComponent 
                             enableDetectFace={enableDetectFace} 

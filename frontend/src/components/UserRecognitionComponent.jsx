@@ -40,20 +40,20 @@ const styles = {
         border: '3px solid #fff',
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
     },
-    infoCell: {
-        gap: '32px',
-        '& > *': {
-            textAlign: 'center'
-        },
-        '& .MuiTypography-root': {
-            '&:first-of-type': {
-                fontSize: '1.6rem',
-            },
-            '&:last-of-type': {
-                fontSize: '1.4rem'
-            }
-        }
-    },
+    // infoCell: {
+    //     gap: '32px',
+    //     '& > *': {
+    //         textAlign: 'center'
+    //     },
+    //     '& .MuiTypography-root': {
+    //         '&:first-of-type': {
+    //             fontSize: '1.6rem',
+    //         },
+    //         '&:last-of-type': {
+    //             fontSize: '1.4rem'
+    //         }
+    //     }
+    // },
     infoCell: {
         gap: '32px',
         textAlign: 'center',

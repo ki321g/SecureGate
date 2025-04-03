@@ -138,6 +138,8 @@ api/.env
 #frontend
 frontend/node_modules/
 frontend/.env
+frontend/build/Release
+frontend/dist
 
 #TinyTuya
 TinyTuya/.venv/

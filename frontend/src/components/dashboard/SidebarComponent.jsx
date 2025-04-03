@@ -45,7 +45,6 @@ const styles = {
     mt: 0,
     fontSize: '2rem',
     fontFamily: "'Montserrat', sans-serif",
-    color: 'text.primary',
     alignItems: 'center',
     fontWeight: '900',
     color: 'primary.main'
