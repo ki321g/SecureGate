@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Alert, Snackbar } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import axios from 'axios';
 
-// You can set this as an environment variable like in the original code
-// or hardcode it for now
+// API key and base URL from environment variables
+const API_KEY = import.meta.env.VITE_BACKEND_API_KEY;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_API_BASE_URL;
+
 const COUNT_DOWN = 10; // or use: import.meta.env.VITE_SUCCESS_COUNT_DOWN
 
 const styles = {
@@ -59,12 +62,17 @@ const styles = {
 	},
 };
 
-const SuccessComponent = ({ setActiveComponent, setShowFaceDector }) => {
+const CleanerComponent = ({ setActiveComponent, setShowFaceDector }) => {
 	const [expanded, setExpanded] = useState(false);
 	const [countdown, setCountdown] = useState(COUNT_DOWN);
+	const [message, setMessage] = useState('Door Opened!');
 
 	// Animation effect when component mounts
 	useEffect(() => {
+		
+		// Open the door
+		controlDoor('toggle');
+
 		// Trigger expansion after a small delay
 		const expandTimer = setTimeout(() => {
 			setExpanded(true);
@@ -75,7 +83,7 @@ const SuccessComponent = ({ setActiveComponent, setShowFaceDector }) => {
 			}, 2000);
 
 			return () => clearTimeout(shrinkTimer);
-		}, 300);
+		}, 300);;
 
 		return () => clearTimeout(expandTimer);
 	}, []);
@@ -89,27 +97,35 @@ const SuccessComponent = ({ setActiveComponent, setShowFaceDector }) => {
 				setCountdown(countdown - 1);
 			}, 1000);
 		} else if (countdown === 0) {
-			// Display RESET alert when countdown reaches zero
-			
-            
-            
             // Turn off face detector
             setShowFaceDector(false);
             // Navigate back to scan card
             setActiveComponent('scanCard');
-
-			// // Handle what happens when countdown reaches zero
-			// // For example, navigate to another component
-			// if (setActiveComponent) {
-			// 	setShowFaceDector && setShowFaceDector(false);
-			// 	setActiveComponent('scanCard');
-			// }
 		}
 
 		return () => {
 			clearTimeout(timer);
 		};
 	}, [countdown, setActiveComponent, setShowFaceDector]);
+
+	// Function to control the door (open, close, toggle)
+	const controlDoor = async (action) => {
+		try {      
+		  const response = await axios.post(`${API_BASE_URL}/door`, 
+			{ action }, // request body
+			{
+			  headers: {
+				'X-API-Key': API_KEY,
+				'Content-Type': 'application/json'
+			  }
+			}
+		  );
+		  return response.data;
+		} catch (err) {
+		  setError(`Failed to ${action} door: ${err.message}`);
+		  throw err;
+		}
+	  };
 
 	return (
 		<Box sx={styles.contentWrapper}>
@@ -146,7 +162,7 @@ const SuccessComponent = ({ setActiveComponent, setShowFaceDector }) => {
 						ACCESS GRANTED
 					</Typography>
 					<Typography sx={{ fontSize: '1.8rem',color: '#4caf50', mt: 1 }}>
-						Door Open & Selected Devices Starting up!
+						{message}
 					</Typography>
 				</Box>
 			</Box>
@@ -154,4 +170,4 @@ const SuccessComponent = ({ setActiveComponent, setShowFaceDector }) => {
 	);
 };
 
-export default SuccessComponent;
+export default CleanerComponent;

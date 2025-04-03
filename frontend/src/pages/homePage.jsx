@@ -20,6 +20,7 @@ import FailedUserRecognitionComponent from '../components/FailedUserRecognitionC
 import DeviceSelectionComponent from '../components/DeviceSelectionComponent';
 import EnterPinComponent from '../components/EnterPinComponent';
 import SuccessComponent from '../components/SuccessComponent';
+import CleanerComponent from '../components/CleanerComponent';
 
 //Testing
 import ToggleButtonComponent from '../components/ToggleButtonComponent';
@@ -66,7 +67,6 @@ const styles = {
     },
     detectorMainContainer: {
         padding: 0,
-        // maxWidth: 'lg',
     },
     detectorMainStack: {
         alignItems: 'flex-start',
@@ -116,11 +116,11 @@ const HomePage = () => {
         text: 'DETECTING FACE',
         color: '#4CAF50'
     });
-
+    
     // Call this function when you want to reset the WebCameraComponent
-const resetWebcamComponent = () => {
-    setResetKey(prevKey => prevKey + 1);
-  };
+    // const resetWebcamComponent = () => {
+    //     setResetKey(prevKey => prevKey + 1);
+    // };
   
 
   return (
@@ -157,28 +157,10 @@ const resetWebcamComponent = () => {
         )}
         {/* Face Detection - Person Object has been dected */}
         {showFaceDector && (
-        // {showFaceDector && toggleButton && (
             <Box id='DetectorMainBox' sx={ styles.detectorMainBox}>
                 <Container id='DetectorContainer' maxWidth={false} disableGutters sx={ styles.detectorMainContainer }>
                     <Stack id='DetectorStack' direction="row" spacing={3} sx={ styles.detectorMainStack }>
-                        {/* Left Column: WebCameraComponent Video and Canvas */}
-                        {/* <WebCameraComponent 
-                            enableDetectFace={enableDetectFace} 
-                            isVisable={activeComponent === 'userRecognition'} 
-                            setActiveComponent={setActiveComponent} 
-                            setStatus={setStatus}
-                        /> */}
-
-
-
-
-                        {/* <WebCameraComponent 
-                            enableDetectFace={enableDetectFace} 
-                            isVisable={ true} 
-                            setActiveComponent={setActiveComponent} 
-                            setStatus={setStatus}
-                        /> */}
-
+                        {/* Left Column: WebCameraComponent Video and Canvas */}                        
                         <WebCameraComponent 
                             key={resetKey}
                             enableDetectFace={enableDetectFace}
@@ -251,7 +233,13 @@ This way, the component will reset whenever it becomes visible or when face dete
                             {activeComponent === 'successUserRecognition' && 
                                 <SuccessComponent 
                                     setActiveComponent={ setActiveComponent }
-                                    setShowFaceDector={setShowFaceDector}
+                                    setShowFaceDector={ setShowFaceDector }
+                                />
+                            }
+                            {activeComponent === 'cleanerSelection' && 
+                                <CleanerComponent 
+                                    setActiveComponent={ setActiveComponent }
+                                    setShowFaceDector={ setShowFaceDector }
                                 />
                             }
                         </Box>

@@ -1,5 +1,9 @@
+import React, { useEffect } from 'react';
 import { Typography, Button, Stack } from '@mui/material'
 import { SecurityOutlined } from '@mui/icons-material'
+
+// Context
+import { useAuth } from '../contexts/authContext';
 
 const styles = {
   stackRowContainer: {    
@@ -30,6 +34,13 @@ const styles = {
   }
 }
 const LogoComponent = () => {
+  const { logout } = useAuth();  
+
+  // Logout the user when the component mounts
+  useEffect(() => {
+    logout();
+  }, []);
+
 
 return (
         <Stack direction="row" spacing={1} sx={ styles.stackRowContainer }>

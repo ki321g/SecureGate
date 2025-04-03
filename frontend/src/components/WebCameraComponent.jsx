@@ -166,11 +166,6 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
                 }
             }, 500);
         }
-        // if (canvasRef.current) {
-        //     const ctx = canvasRef.current.getContext('2d');
-        //     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        // }
-        
         // Reset the status
         setStatus({ text: 'DETECTING FACE', color: '#3498db' });
     };
@@ -451,6 +446,7 @@ const WebCameraComponent = ({ enableDetectFace, isVisable, setActiveComponent, s
                 if (isAdminRole) {
                     navigate('/dashboard');
                 } else if (isCleanerRole) {
+                    // alert('Cleaner role selected');
                     setActiveComponent('cleanerSelection');
                 } else {
                     setActiveComponent('deviceSelection');
