@@ -483,8 +483,17 @@ const UsersContent = () => {
       
       if (error) throw error;
       
-      const updatedUsers = users.filter(
-        user => user.uid !== modalState.selectedUser.uid
+      // I dont want to delete the USER i am just chaning Status but if deleting enable this
+      // const updatedUsers = users.filter(
+      //   user => user.uid !== modalState.selectedUser.uid
+      // );
+      // setUsers(updatedUsers);
+      
+      // Update the user in the UI with the new status
+      const updatedUsers = users.map(user => 
+        user.uid === modalState.selectedUser.uid 
+          ? { ...user, status: 'InActive' } 
+          : user
       );
       setUsers(updatedUsers);
       

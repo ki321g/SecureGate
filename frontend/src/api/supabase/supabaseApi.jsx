@@ -56,14 +56,23 @@ export const usersApi = {
         .select()
       return { data, error }
     },
-    // Delete a user
+    // Delete a user (actually sets status to InActive)
     delete: async (uid) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('users')
-        .delete()
+        .update({ status: 'InActive' })
         .eq('uid', uid)
-      return { error }
-    }
+        .select()
+      return { data, error }
+    },
+    // Delete a user
+    // delete: async (uid) => {
+    //   const { error } = await supabase
+    //     .from('users')
+    //     .delete()
+    //     .eq('uid', uid)
+    //   return { error }
+    // }
   }
 
 /*
