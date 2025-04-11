@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define paths - adjust these to match your actual file structure
-FRONTEND_DIR="$HOME/SecureGate/frontend"
+FRONTEND_DIR="$HOME/SecureGate/frontend/dist"
 API_DIR="$HOME/SecureGate/api"
 LOGS_DIR="$HOME/SecureGate/logs"
 
@@ -19,7 +19,7 @@ touch "$LOGS_DIR/startup.log"
 echo "$(date '+%d-%m-%Y::%H:%M:%S') -::- SecureGate starting at $(date)" > "$LOGS_DIR/startup.log"
 
 # Start the frontend in the background without a visible terminal
-cd "$FRONTEND_DIR" && npm run dev > "$LOGS_DIR/frontend.log" 2>&1 &
+cd "$FRONTEND_DIR" && serve -l 5175 > "$LOGS_DIR/frontend.log" 2>&1 &
 FRONTEND_PID=$!
 
 # Start the API in the background without a visible terminal
@@ -38,4 +38,6 @@ sleep 3
 echo "$(date '+%d-%m-%Y::%H:%M:%S') -::- Starting Firefox at $(date)" >> "$LOGS_DIR/startup.log"
 
 # Launch Firefox in kiosk (full screen) mode
-firefox --kiosk http://localhost:5173/
+####firefox --kiosk http://localhost:5175/
+export DISPLAY=:0
+firefox --kiosk http://localhost:5175/ || echo "Firefox failed to start: $?" >> "$LOGS_DIR/startup.log"
