@@ -132,11 +132,17 @@ dist
 #api
 api/.venv/
 api/__pycache__/
+api/.env
 *.pyc
 
 #frontend
 frontend/node_modules/
 frontend/.env
+frontend/build/Release
+frontend/dist
+
+# Explicitly include the logs components folder
+!frontend/src/components/dashboard/logs/
 
 #TinyTuya
 TinyTuya/.venv/

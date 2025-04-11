@@ -8,6 +8,11 @@ import { userContext } from '../contexts/userContext'
 // API
 import { usersApi } from '../api/supabase/supabaseApi'
 
+// API key and base URL from environment variables
+const API_KEY = import.meta.env.VITE_BACKEND_API_KEY;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_API_BASE_URL;
+
+
 const styles = {
     contentWrapper: {
         width: '90%',
@@ -55,10 +60,11 @@ const ScanCardComponent = ({ setActiveComponent }) => {
     const [error, setError] = useState(null);
 
     const readCard = async () => {
-        try {
-            const response = await axios.get('http://localhost:3002/card/uid', {
+        try {            
+            const response = await axios.get(`${API_BASE_URL}/card/uid`, {
                 headers: {
-                    'Cache-Control': 'no-cache'
+                'X-API-Key': API_KEY,
+                'Content-Type': 'application/json'
                 }
             });
             console.log(response)
@@ -74,6 +80,12 @@ const ScanCardComponent = ({ setActiveComponent }) => {
             console.error('Error reading card:', error);
         }
     }; 
+
+    // Reset cardUID and user when component mounts
+    useEffect(() => {
+        setCardUID('noCardUID');
+        setUser(null);
+    }, []);
 
     useEffect(() => {
         if (isReading) {
@@ -119,7 +131,8 @@ return (
                 <Input
                     disableUnderline
                     disabled
-                    value={user.card_id || 'No Card ID'}
+                    // value={user.card_id || 'No Card ID'}
+                    value={cardUID === 'noCardUID' ? 'No Card ID' : (cardUID || 'No Card ID')}
                     sx={styles.input}
                 />
             </Box>

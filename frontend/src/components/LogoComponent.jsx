@@ -1,5 +1,9 @@
+import React, { useEffect } from 'react';
 import { Typography, Button, Stack } from '@mui/material'
 import { SecurityOutlined } from '@mui/icons-material'
+
+// Context
+import { useAuth } from '../contexts/authContext';
 
 const styles = {
   stackRowContainer: {    
@@ -11,26 +15,32 @@ const styles = {
     alignItems: 'center'
   },
   securityIcon: {
-    fontSize: 250,
+    fontSize: 400,
     color: 'primary.main'
   },
   headerText: {
     mt: 0,
-    fontSize: 140,
-    color: 'text.primary',
+    fontSize: 200,
     alignItems: 'center',
     fontWeight: '900',
     color: 'primary.main'
   },
   subHeaderText: {
     mt: -3,
-    fontSize: 50,
+    fontSize: 70,
     color: 'text.secondary',
     alignItems: 'center',
     fontWeight: '700'
   }
 }
 const LogoComponent = () => {
+  const { logout } = useAuth();  
+
+  // Logout the user when the component mounts
+  useEffect(() => {
+    logout();
+  }, []);
+
 
 return (
         <Stack direction="row" spacing={1} sx={ styles.stackRowContainer }>

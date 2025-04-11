@@ -23,7 +23,6 @@ const styles = {
     },    
     table: {
         maxWidth: '800px',
-        // margin: '20px 0',
         backgroundColor: '#ffffff',
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
         borderRadius: '8px',
@@ -41,23 +40,20 @@ const styles = {
         border: '3px solid #fff',
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
     },
-    infoCell: {
-        // display: 'flex',
-        // alignItems: 'center',
-        // justifyContent: 'center',
-        gap: '32px',
-        '& > *': {
-            textAlign: 'center'
-        },
-        '& .MuiTypography-root': {
-            '&:first-of-type': {
-                fontSize: '1.6rem',
-            },
-            '&:last-of-type': {
-                fontSize: '1.4rem'
-            }
-        }
-    },
+    // infoCell: {
+    //     gap: '32px',
+    //     '& > *': {
+    //         textAlign: 'center'
+    //     },
+    //     '& .MuiTypography-root': {
+    //         '&:first-of-type': {
+    //             fontSize: '1.6rem',
+    //         },
+    //         '&:last-of-type': {
+    //             fontSize: '1.4rem'
+    //         }
+    //     }
+    // },
     infoCell: {
         gap: '32px',
         textAlign: 'center',
@@ -82,13 +78,14 @@ const styles = {
         width: '100%',
         maxWidth: '800px',
         paddingY: '64px',
-        fontSize: '3.8rem',
+        fontSize: '2.4rem',
         fontWeight: 'bold',
         textAlign: 'center',
         backgroundColor: '#f8f8f8',
         border: '2px solid #e0e0e0',
         borderRadius: '8px',
         textTransform: 'uppercase',
+        textColor: '#ffffff !important',
         fontFamily: "'Montserrat', sans-serif",
         '&.Mui-disabled': {
             WebkitTextFillColor: '#ffffff',
@@ -97,6 +94,7 @@ const styles = {
         },
         '& input': {
             textAlign: 'center',
+            textColor: '#ffffff !important',
             fontWeight: 900,
             textTransform: 'uppercase',
             fontFamily: "'Montserrat', sans-serif"
@@ -112,7 +110,6 @@ const styles = {
 		position: 'absolute',
 		padding: 2,
 		margin: 2,
-		// backgroundColor: 'rgba(255, 255, 255, 0.7)',
 		borderRadius: '6px',
 		top: 10,
 		right: 10,
@@ -120,12 +117,12 @@ const styles = {
 	},
 };
 
-const UserRecognitionComponent = ({ setActiveComponent }) => {
+const UserRecognitionComponent = ({ setActiveComponent, status }) => {
     const { user, setUser } = useContext(userContext)
-    const [status, setStatus] = useState({
-        text: 'READY',
-        color: '#4CAF50'
-    });
+    // const [status, setStatus] = useState({
+    //     text: 'READY',
+    //     color: '#4CAF50'
+    // });
 
     const toggleStatus = () => {
         if (status.text === 'READY') {
@@ -150,7 +147,6 @@ const UserRecognitionComponent = ({ setActiveComponent }) => {
                             <TableCell rowSpan={4} sx={{ width: '140px', border: 'none' }}>
                                 <Avatar
                                     src={user.user_picture}
-                                    // src="https://randomuser.me/api/portraits/men/86.jpg"
                                     sx={styles.userAvatar}
                                 />
                             </TableCell>
@@ -188,13 +184,13 @@ const UserRecognitionComponent = ({ setActiveComponent }) => {
                     onClick={toggleStatus}
                 />
             </Box>
-            <Button 
+            {/* <Button 
                 variant="contained" 
                 onClick={toggleStatus}
                 sx={{ ...styles.toggleButton, marginTop: '2px' }}
             >
                 Toggle Status
-            </Button>
+            </Button> */}
         </Box>
     );
 };

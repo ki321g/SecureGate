@@ -1,285 +1,264 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom'
+import React, { useEffect, useState, useRef } from 'react';
+
+import { 
+    Box,
+    Typography,
+    Container,
+    Stack,
+    Button,
+} from '@mui/material';
+
+// Components
+import CardReader from '../components/CardReader';
+import ScreenSaverComponent from '../components/ScreenSaverComponent';
+import WebCameraComponent from '../components/WebCameraComponent';
+import WebCameraObjectDectionComponent from '../components/WebCameraObjectDectionComponent';
+import LogoComponent from '../components/LogoComponent';
+import ScanCardComponent from '../components/ScanCardComponent';
+import UserRecognitionComponent from '../components/UserRecognitionComponent';
+import FailedUserRecognitionComponent from '../components/FailedUserRecognitionComponent';
+import DeviceSelectionComponent from '../components/DeviceSelectionComponent';
+import EnterPinComponent from '../components/EnterPinComponent';
+import SuccessComponent from '../components/SuccessComponent';
+import CleanerComponent from '../components/CleanerComponent';
+
+//Testing
+import ToggleButtonComponent from '../components/ToggleButtonComponent';
+
+// API
+import { rolesApi, devicesApi, roleToDeviceApi } from '../api/supabase/supabaseApi'
 
 //Context 
-import { useCamera } from '../contexts/cameraContext'; // Adjust path
+import { useCardUID } from '../contexts/cardUidContext';
+import { useData } from '../contexts/dataContext';
+import { useUser } from '../contexts/userContext';
 
-// Import: Video Processing Libraries
-import Webcam from 'react-webcam'
-import {
-          ObjectDetector,
-          FilesetResolver,
-        } from "@mediapipe/tasks-vision"
+const videoWidth = 1024;
+const videoHeight = 576;
 
-// Import: Material UI Components
-import {
-          Box,
-          Typography,
-          Container
-        } from '@mui/material'
-
-// Import: Custom Components
-import LogoComponent from '../components/homepage/logo'
-import TempButtonsComponent from '../components/homepage/tempButtons'
-
-
-const refVideoConstraints = {
-  width: 1280,
-  height: 720,
-  facingMode: "user"
-}
 const styles = {
-  mainBox: {
-    display: 'flex',
-    minHeight: '100vh',
-    minWidth: '100vw',
-    alignItems: 'center',
-    justifyContent: 'center',
-    bgcolor: 'background.paper'
-  },
-  contentBox: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    textAlign: 'center',
-    gap: 4,
-    py: 8
-  },
-  webcam: {
-    display: 'none', // Hides the webcam element
-  },
-  canvas: {
-    display: 'none', // Hide the canvas as well
-  },
-  
-  // webcam: {
-  //   position: 'absolute',
-  //   marginLeft: 'auto',
-  //   marginRight: 'auto',
-  //   // display: 'none', 
-  //   left: 0,
-  //   right: 0,
-  //   textAlign: 'center',
-  //   zindex: 9,
-  //   width: 1280,
-  //   height: 720,
-  // },
-  // canvas: {
-  //   position: 'absolute',
-  //   marginLeft: 'auto',
-  //   marginRight: 'auto',
-  //   // display: 'none', 
-  //   left: 0,
-  //   right: 0,
-  //   textAlign: 'center',
-  //   zindex: 9,
-  //   width: 1280,
-  //   height: 720,
-  // },
-}
+    logoMainBox: {
+      display: 'flex',
+      minHeight: '100vh',
+      minWidth: '100vw',
+      alignItems: 'center',
+      justifyContent: 'center',
+      bgcolor: 'background.paper'
+    },
+    logoContentBox: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      textAlign: 'center',
+      gap: 4,
+      py: 8
+    },
+    logoStack: {
+        minWidth: '100vw',
+        width: '100%',
+    },
+    detectorMainBox: {
+        display: 'flex',
+        minHeight: '100vh',
+        minWidth: '100vw',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'background.paper'
+    },
+    detectorMainContainer: {
+        padding: 0,
+    },
+    detectorMainStack: {
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        pt: 8,
+        gap: 4,
+    },
+    detectorContentBox: {
+        display: 'flex',
+        overflowY: 'none',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        height: videoHeight,
+        textAlign: 'center',
+        backgroundColor: '#3D3D3D',
+        border: (theme) => `10px solid ${theme.palette.primary.main}`, 
+        borderRadius: '8px',
+        padding: '0px',
+        width: 500,
+        mt: 4,
+    },
+    detectorContentHeading: {
+        color: 'black',
+        fontSize: '60px',
+        fontWeight: 'bold',
+    },
+    pulsingText: {
+        mt: 2,
+        color: 'text.secondary',
+        animation: 'pulse 2s infinite'
+      }
+  }
 
 const HomePage = () => {
-  const { webcamRef, canvasRef } = useCamera();
-  const navigate = useNavigate();
-  // const webcamRef = useRef(null);
-  // const canvasRef = useRef(null);
-  const [personDetected, setPersonDetected] = useState(false);
-  const [objectDetector, setObjectDetector] = useState(null); 
-  const [lastVideoTime, setLastVideoTime] = useState(-1);
-
-  useEffect(() => {
-    const initializeObjectDetector = async () => {
-      const vision = await FilesetResolver.forVisionTasks(
-        "/node_modules/@mediapipe/tasks-vision/wasm"
-      );
-      const detector = await ObjectDetector.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite`,
-          delegate: "CPU"
-        },
-        scoreThreshold: 0.5,
-        runningMode: "VIDEO"
-      });
-      setObjectDetector(detector); // Set the state with the created detector
-    };
-    initializeObjectDetector();
-  }, []);
-
-
-
-  useEffect(() => {
-    if (!webcamRef.current || !objectDetector) {
-      return; // Exit if webcam or detector isn't ready
-    }
-    // console.log('Detect Function Initialized');
-
-    const detect = async () => {
-      const video = webcamRef.current.video;
-      // console.log('Video:', video);
-      if (!video) {
-        return
-      }
-
-      let startTimeMs = performance.now();
-      let results = null;
-      if (video.currentTime !== lastVideoTime) {
-        setLastVideoTime(video.currentTime);
-        const detections = objectDetector.detectForVideo(video, startTimeMs);
-        results = detections;
-      }
-
-      // Reset detection state each frame
-      setPersonDetected(false);
-
-      if (results.detections.length > 0) {
-        for (const detection of results.detections) {
-          if (detection.categories[0].categoryName === 'person') {
-            setPersonDetected(true);
-            navigate('/camera')
-            break; // Exit loop if a person is found
-          }
-        }
-
-        // Bounding box drawing code (optional, can be removed)
-        const canvasCtx = canvasRef.current.getContext("2d");
-        canvasCtx.save();
-        canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        for (const detection of results.detections) {
-          const boundingBox = detection.boundingBox;
-          const category = detection.categories[0];
-          canvasCtx.beginPath();
-          canvasCtx.rect(boundingBox.originX, boundingBox.originY, boundingBox.width, boundingBox.height);
-          canvasCtx.lineWidth = 2;
-          canvasCtx.strokeStyle = 'red';
-          canvasCtx.stroke();
-          canvasCtx.font = '16px Arial';
-          canvasCtx.fillStyle = 'red';
-          canvasCtx.fillText(`${category.categoryName} (${Math.round(category.score * 100)}%)`, boundingBox.originX + 5, boundingBox.originY + 20);
-        }
-        canvasCtx.restore();
-      } else {
-          const canvasCtx = canvasRef.current.getContext("2d");
-          canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-      }
-
-      requestAnimationFrame(detect); // Continue detection loop
-    };
-
-    const id = requestAnimationFrame(detect); // Start detection loop
-    return () => cancelAnimationFrame(id);     // Cleanup on unmount
-
-  }, [objectDetector]); // Depend on the objectDetector state
-
+    const { devices, setDevices } = useData();
+    const { roles, setRoles } = useData();
+    const { roleToDevices, setRolesToDevices } = useData();
+    const { cardUID, setCardUID } = useCardUID();
+    const { user, setUser } = useUser();
+    const [ cardReader, setCardReader ] = useState(false);
+    const [ showFaceDector, setShowFaceDector ] = useState(false);
+    const [ enableDetectFace, setEnableDetectFace ] = useState(false);
+    const [recognitionAttempts, setRecognitionAttempts] = useState(0);
+    const [ activeComponent, setActiveComponent ] = useState('scanCard');
+    const [resetKey, setResetKey] = useState(0);
+    const [status, setStatus] = useState({
+        text: 'DETECTING FACE',
+        color: '#4CAF50'
+    });
+    
+    // Call this function when you want to reset the WebCameraComponent
+    // const resetWebcamComponent = () => {
+    //     setResetKey(prevKey => prevKey + 1);
+    // };
+  
 
   return (
     <>
-     {/* {personDetected && (
-      <Typography variant="h4" color="error">
-        Detected a Person
-      </Typography>
-     )} */}
-    <Box sx={ styles.mainBox }>
-      <Container maxWidth="lg">
-        <Box sx={ styles.contentBox }>
-          <LogoComponent />
-          {/* {personDetected && (
-            <Typography variant="h4" color="error">
-              Detected a Person
-            </Typography>
-          )} */}
-          {/* <TempButtonsComponent /> */}
-          {/* <Webcam ref={webcamRef} audio={false} 
-            height={720} width={1280} screenshotFormat="image/jpeg" videoConstraints={ refVideoConstraints } style={styles.webcam} /> */}
-          <Webcam
-            ref={webcamRef}
-            mirrored={false}
-            audio={false}
-            screenshotFormat="image/jpeg"
-            width={1280}
-            height={720}
-            videoConstraints={ refVideoConstraints}
-            style={styles.webcam}
-          />
-          <canvas 
-            ref={canvasRef} 
-            style={styles.canvas}
-          />
-        </Box>
-      </Container>
-    </Box>
+        {/* ScreenSaver - Logo first Screen*/}
+        {!showFaceDector && (
+            <Box 
+                id='LogoMainBox' 
+                sx={{ 
+                    ...styles.logoMainBox,
+                    cursor: 'pointer' // Add cursor pointer to indicate it's clickable
+                }}
+                onClick={() => setShowFaceDector(true)} // Add onClick handler
+            >
+            <Container id='LogoContainer' maxWidth="lg">
+                <Box id='LogoContentBox' sx={ styles.logoContentBox }>
+                    {/* Logo Component */}
+                    <LogoComponent id='LogoComponent' />
+                    <Typography 
+                        variant="h2" 
+                        sx={{ 
+                            mt: 0, 
+                            color: 'text.secondary',
+                            animation: 'pulse 2s infinite',
+                            fontSize: '10rem',
+                            fontWeight: '900'
+                        }}
+                    >
+                        TAP SCREEN 
+                    </Typography>
+                </Box>
+            </Container>
+            </Box>
+        )}
+        {/* Face Detection - Person Object has been dected */}
+        {showFaceDector && (
+            <Box id='DetectorMainBox' sx={ styles.detectorMainBox}>
+                <Container id='DetectorContainer' maxWidth={false} disableGutters sx={ styles.detectorMainContainer }>
+                    <Stack id='DetectorStack' direction="row" spacing={3} sx={ styles.detectorMainStack }>
+                        {/* Left Column: WebCameraComponent Video and Canvas */}                        
+                        <WebCameraComponent 
+                            key={resetKey}
+                            enableDetectFace={enableDetectFace}
+                            isVisable={activeComponent === 'userRecognition'}
+                            setActiveComponent={setActiveComponent}
+                            setStatus={setStatus}
+                        />
+
+ {/* Another way to reset component is to use a key prop that changes whenever you want to reset the component. Here's how you can implement this approach:
+
+1. In the parent component that renders WebCameraComponent, add a state variable for the reset key:
+
+ADD
+const [resetKey, setResetKey] = useState(0);
+
+2. Then pass this key to the WebCameraComponent:
+// In the parent component's render method
+<WebCameraComponent 
+  key={resetKey}
+  enableDetectFace={enableDetectFace}
+  isVisable={isVisable}
+  setActiveComponent={setActiveComponent}
+  setStatus={setStatus}
+/>
+
+3. When you want to reset the component (for example, when a user fails verification and you want to try again), increment the key:
+
+// Call this function when you want to reset the WebCameraComponent
+const resetWebcamComponent = () => {
+  setResetKey(prevKey => prevKey + 1);
+};
+
+This approach doesn't require any changes to the WebCameraComponent itself. The parent component controls when to reset it by changing the key prop.
+
+Alternatively, if you prefer to stick with the current approach of resetting within the component, you can modify your useEffect to depend on both isVisable and enableDetectFace:
+
+useEffect(() => {
+    resetComponent();
+    
+    return () => {
+        // Cleanup code
+    };
+}, [isVisable, enableDetectFace]); // Depend on both visibility and detection flag
+
+This way, the component will reset whenever it becomes visible or when face detection is enabled/disabled.
+
+
+*/}
+
+                        {/* Right Column: Content */}
+                        <Box id='DetectorContentBox' sx={ styles.detectorContentBox }>
+                            {activeComponent === 'scanCard' && 
+                                <ScanCardComponent setActiveComponent={ setActiveComponent }/>
+                            }
+                            {activeComponent === 'enterPin' && 
+                                <EnterPinComponent setEnableDetectFace={ setEnableDetectFace } setActiveComponent={ setActiveComponent }/>
+                            }
+                            {activeComponent === 'userRecognition' && 
+                                <UserRecognitionComponent setActiveComponent={ setActiveComponent } status={ status }/>
+                            }
+                            {activeComponent === 'failedUserRecognition' && 
+                                <FailedUserRecognitionComponent 
+                                    setActiveComponent={ setActiveComponent }
+                                    setShowFaceDector={setShowFaceDector}
+                                />
+                            }
+                            {activeComponent === 'deviceSelection' && 
+                                <DeviceSelectionComponent setActiveComponent={ setActiveComponent }/>
+                            }
+                            {activeComponent === 'successUserRecognition' && 
+                                <SuccessComponent 
+                                    setActiveComponent={ setActiveComponent }
+                                    setShowFaceDector={ setShowFaceDector }
+                                />
+                            }
+                            {activeComponent === 'cleanerSelection' && 
+                                <CleanerComponent 
+                                    setActiveComponent={ setActiveComponent }
+                                    setShowFaceDector={ setShowFaceDector }
+                                />
+                            }
+                        </Box>
+                    </Stack>
+                </Container>
+            </Box>
+        )}	
+
+         {/* ToggleButtonComponent: Used during Development Remove of comment out */}
+        {/* <ToggleButtonComponent showFaceDector={ showFaceDector } setShowFaceDector={ setShowFaceDector }/> */}
+        {/* <ToggleButtonComponent 
+            activeComponent={activeComponent} 
+            setActiveComponent={setActiveComponent}
+            showFaceDector={showFaceDector}
+            setShowFaceDector={setShowFaceDector}
+            /> */}
+  
     </>
-  )
+  );
 }
 
-export default HomePage
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import React, { useRef, useEffect, useState } from 'react';
-
-// // Import: Video Processing Libraries
-// import Webcam from 'react-webcam'
-// import {
-//           ObjectDetector,
-//           FaceLandmarker,
-//           FilesetResolver,
-//           DrawingUtils,
-//           FaceDetector
-//         } from "@mediapipe/tasks-vision"
-
-// // Import: Material UI Components
-// import { 
-//           Box, 
-//           Typography, 
-//           Container
-//         } from '@mui/material'
-
-// // Import: Custom Components
-// import LogoComponent from '../components/homepage/logo'
-// import TempButtonsComponent from '../components/homepage/tempButtons'
-// const styles = {
-//   mainBox: {
-//     display: 'flex',
-//     minHeight: '100vh',
-//     minWidth: '100vw',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//     bgcolor: 'background.paper'
-//   },
-//   contentBox: {
-//     display: 'flex',
-//     flexDirection: 'column',
-//     alignItems: 'center',
-//     textAlign: 'center',
-//     gap: 4,
-//     py: 8
-//   },
-// }
-
-// const HomePage = () => {
-
-//   return (
-//     <Box sx={ styles.mainBox }>
-//       <Container maxWidth="lg">
-//         <Box sx={ styles.contentBox }>
-//           <LogoComponent />
-//           <TempButtonsComponent />
-//         </Box>
-//       </Container>
-//     </Box>
-//   )
-// }
-
-// export default HomePage
+export default HomePage;

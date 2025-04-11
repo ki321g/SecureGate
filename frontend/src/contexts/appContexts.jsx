@@ -6,20 +6,23 @@ import DeviceContextProvider from './deviceContext';
 import CameraContextProvider from './cameraContext';
 import CardUidContextProvider from './cardUidContext';
 import DataContextProvider from './dataContext';
+import AuthContextProvider from './authContext';
 
 const AppContextProvider = ({ children }) => {
     return (
-        <DataContextProvider>
-            <CameraContextProvider>
-                <CardUidContextProvider>
-                    <UserContextProvider>
-                        <DeviceContextProvider>
-                            {children}
-                        </DeviceContextProvider>
-                    </UserContextProvider>
-                </CardUidContextProvider>
-            </CameraContextProvider>
-        </DataContextProvider>
+        <AuthContextProvider>
+            <DataContextProvider>
+                <CameraContextProvider>
+                    <CardUidContextProvider>
+                        <UserContextProvider>
+                            <DeviceContextProvider>
+                                {children}
+                            </DeviceContextProvider>
+                        </UserContextProvider>
+                    </CardUidContextProvider>
+                </CameraContextProvider>
+            </DataContextProvider>
+        </AuthContextProvider>
     );
 }
 

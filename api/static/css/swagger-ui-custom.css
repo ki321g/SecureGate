@@ -63,7 +63,7 @@ body {
     margin: 0 !important;
     padding: 10px !important;
 }
-/* .opblock-tag */
+
 .swagger-ui .wrapper {
     background-color: #1e1e1e;
 }
@@ -104,7 +104,7 @@ body {
 }
 
 .swagger-ui section.models {
-    margin: 50px 0 50px !important;
+    margin: 0px 0 50px !important;
 }
 
 .swagger-ui section.models .model-container:first-of-type {
@@ -130,28 +130,3 @@ body {
 .swagger-ui .auth-container .wrapper{
     background-color: #fff;
 }
-
-/* .swagger-ui .opblock-tag .nostyle span {
-    color: #fff;
-} */
-
-.swagger-ui .opblock .opblock-summary-operation-id, 
-.swagger-ui .opblock .opblock-summary-path, 
-.swagger-ui .opblock .opblock-summary-path__deprecated {
-    /* color: #f0f0f0; */
-}
-.swagger-ui .opblock {
-    /* background-color: #2a2a2a; */
-    /* border-color: #3e3e3e; */
-}
-.swagger-ui .opblock-tag {
-    /* border-bottom: 1px solid #3e3e3e; */
-}
-.swagger-ui .topbar {
-    /* background-color: #2a2a2a; */
-}
-.swagger-ui .btn {
-    /* background-color: #4a4a4a;
-    color: #f0f0f0; */
-} 
-/* Add more styles as needed */

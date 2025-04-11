@@ -12,11 +12,12 @@ import './main.css'
 // Contexts
 import AppContextProvider from './contexts/appContexts';
 
+// Components
+import ProtectedRoute from './components/ProtectedRoute';
+
 // Routes/Pages
 import HomePage from "./pages/homePage";
 import DashboardPage from "./pages/dashboardPage"
-import AboutPage from "./pages/aboutPage"
-import CameraPage from "./pages/cameraPage"
 import DoorTestPage from "./pages/doorTestPage"
 import TestPage from "./pages/testPage"
 
@@ -46,9 +47,17 @@ const App = () => {
             <AppContextProvider>               {/* Provides the user context to the app */}
               <Routes>                          {/* Defines the routes for the app */}
                 <Route path="/" element={<HomePage />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/camera" element={<CameraPage />} />
+                {/* <Route path="/dashboard" element={<DashboardPage />} /> */}
+                {/* Protect Route to Dashboard Page */}
+                <Route 
+                  path="/dashboard" 
+                  element={
+                    <ProtectedRoute>
+                      <DashboardPage />
+                    </ProtectedRoute>
+                  } 
+                />
+
                 <Route path="/door" element={<DoorTestPage />} />
                 <Route path="/test" element={<TestPage />} />
               </Routes>

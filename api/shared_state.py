@@ -1,3 +1,4 @@
 # Shared state variables
 CARD_UID = None
 CARD_PRESSENT = False
+FACIAL_RECOGNITION_ATTEMPTS = 0
