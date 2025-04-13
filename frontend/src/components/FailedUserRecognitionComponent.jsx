@@ -12,8 +12,9 @@ import WarningIcon from '@mui/icons-material/Warning';
 // API key and base URL from environment variables
 const API_KEY = import.meta.env.VITE_BACKEND_API_KEY;
 const API_BASE_URL = import.meta.env.VITE_BACKEND_API_BASE_URL;
-const COUNT_DOWN = import.meta.env.VITE_FAILED_COUNT_DOWN
-// const MAX_ATTEMPTS = import.meta.env.VITE_MAX_ATTEMPTS;
+const COUNT_DOWN = import.meta.env.VITE_FAILED_COUNT_DOWN;
+// const MAX_ATTEMPTS = import.meta.env.VITE_MAX_ATTEMPTS;const 
+const MAX_ATTEMPTS = 3;
 
 // Context
 import { cardUidContext } from '../contexts/cardUidContext'
@@ -22,7 +23,7 @@ import { userContext } from '../contexts/userContext'
 // API
 import { failedAttemptsApi } from '../api/supabase/supabaseApi'
 
-const MAX_ATTEMPTS = 3;
+
 const styles = {
     contentWrapper: {
         width: '90%',
@@ -58,15 +59,8 @@ const styles = {
         alignItems: 'center',
         justifyContent: 'center',
         margin: '0 10px',
-        // border: '2px solid #ff9800',
         border: '2px solid #d32f2f',
         position: 'relative'
-    },
-    
-    // backgroundColor: '#ffebee',
-    // border: '2px solid #d32f2f',
-    buttonContainer: {
-        // Button container styles
     },
     button: {
         fontWeight: 'bold', 
@@ -81,13 +75,12 @@ const styles = {
         borderRadius: '4px',
     },
     countdownText: {
-        fontSize: '1.8rem', // Match button font size
+        fontSize: '1.8rem', 
         fontWeight: 'bold',
         color: '#ff4500'
     }
 };
 
-// const FailedUserRecognitionComponent = ({ setActiveComponent }) => {
 const FailedUserRecognitionComponent = ({ setActiveComponent, setShowFaceDector }) => {
   
     const { cardUID, setCardUID } = useContext(cardUidContext)
@@ -125,17 +118,10 @@ const FailedUserRecognitionComponent = ({ setActiveComponent, setShowFaceDector 
             }, 1000);
         } else if (countdown === 0) {
             // Show the scan card component after countdown
-            
             // Turn off face detector
             setShowFaceDector(false);
             // Navigate back to scan card
             setActiveComponent('scanCard');
-
-            // if (attempts === MAX_ATTEMPTS) {
-            //     handleTryAgain();
-            // } else {
-            //     setActiveComponent('scanCard');
-            // }
         }
         
         return () => {
@@ -263,8 +249,6 @@ const FailedUserRecognitionComponent = ({ setActiveComponent, setShowFaceDector 
                         ? "Maximum attempts reached."
                         : "We couldn't verify your identity. Please try again or wait for automatic redirect."}
                 </Typography>
-                
-                {/* <Divider sx={{ width: '80%', margin: '16px 0' }} /> */}
                 <Box sx={styles.countdownContainer}>
                     <Typography sx={styles.countdownText}>
                         Resets in {countdown}

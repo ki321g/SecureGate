@@ -37,7 +37,7 @@ sleep 3
 # Log Firefox startup
 echo "$(date '+%d-%m-%Y::%H:%M:%S') -::- Starting Firefox at $(date)" >> "$LOGS_DIR/startup.log"
 
+
 # Launch Firefox in kiosk (full screen) mode
-####firefox --kiosk http://localhost:5175/
 export DISPLAY=:0
 firefox --kiosk http://localhost:5175/ || echo "Firefox failed to start: $?" >> "$LOGS_DIR/startup.log"

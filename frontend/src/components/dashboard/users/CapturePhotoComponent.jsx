@@ -4,9 +4,6 @@ import Cropper from 'react-easy-crop';
 import Webcam from 'react-webcam';
 import { Select, Slider, Button, Stack, Typography } from '@mui/material';
 
-// const videoWidth = 640;
-// const videoHeight = 360;
-
 const videoWidth = 854;
 const videoHeight = 480;
 
@@ -23,7 +20,6 @@ const CapturePhotoComponent = ({ onPhotoCaptured }) => {
     mediaDevices => {
       setDevices(mediaDevices.filter(({ kind }) => kind === "videoinput"));
       if(mediaDevices.filter(({ kind }) => kind === "videoinput").length > 0) {
-        //select the first device by default
         setSelectedDeviceId(mediaDevices.filter(({ kind }) => kind === "videoinput")[0].deviceId)
       }
     },

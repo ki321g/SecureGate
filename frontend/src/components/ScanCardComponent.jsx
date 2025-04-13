@@ -107,8 +107,6 @@ const ScanCardComponent = ({ setActiveComponent }) => {
                         console.error('Error fetching data:', error.message);
                     } finally {
                         const timeout = setTimeout(() => {
-                            // setEnableDetectFace(true); // Enable face detection
-                            // setActiveComponent('userRecognition');
                             setActiveComponent('enterPin');
                         }, 1500); 
                         return () => clearTimeout(timeout);
@@ -131,7 +129,6 @@ return (
                 <Input
                     disableUnderline
                     disabled
-                    // value={user.card_id || 'No Card ID'}
                     value={cardUID === 'noCardUID' ? 'No Card ID' : (cardUID || 'No Card ID')}
                     sx={styles.input}
                 />

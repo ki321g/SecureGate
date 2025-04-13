@@ -95,9 +95,6 @@ const EnterPinComponent = ({ setEnableDetectFace, setActiveComponent }) => {
     const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
     
-    // For demo purposes, we'll use a hardcoded PIN
-    // In a real app, you would verify this against a backend
-    // const CORRECT_PIN = '1234'; 
     const CORRECT_PIN = user.password; 
     
     const handleNumPress = (num) => {
@@ -120,7 +117,6 @@ const EnterPinComponent = ({ setEnableDetectFace, setActiveComponent }) => {
         
          setLoading(true);
         
-        // // Simulate API call to verify PIN
          setTimeout(() => {
             if (pin === CORRECT_PIN) {
                 setSuccess('PIN verified successfully!');

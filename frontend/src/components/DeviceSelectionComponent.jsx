@@ -51,8 +51,8 @@ const styles = {
     textAlign: 'center',
   },
   devicesContainer: {
-    height: '240px', // Height for approximately 4 devices
-    overflowY: 'scroll', // Changed from 'auto' to 'scroll' to always show scrollbar
+    height: '240px', 
+    overflowY: 'scroll', 
     overflowX: 'hidden',
     padding: '12px',
     border: '2px solid #e0e0e0',
@@ -173,27 +173,6 @@ const DeviceSelectionComponent = ({ setActiveComponent }) => {
       // Don't throw here as this isn't critical for the component to function
     }
   };
-  
-  //   const resetFacialRecognitionAttemptsCount = async () => {
-  //   try {
-  //     const response = await axios.post(
-  //       `${API_BASE_URL}/facial-recognition/attempts`,
-  //       { attempts: 0 },
-  //       {
-  //         headers: {
-  //           'X-API-Key': API_KEY,
-  //           'Content-Type': 'application/json'
-  //         }
-  //       }
-  //     );
-      
-  //     console.log('Count reset successfully:', response.data);
-  //     return response.data;
-  //   } catch (error) {
-  //     console.error('Failed to reset count:', error);
-  //     // Don't throw here as this isn't critical for the component to function
-  //   }
-  // };
 
   const fetchUserDevices = async () => {
     try {
@@ -556,47 +535,6 @@ const DeviceSelectionComponent = ({ setActiveComponent }) => {
                       No devices available
                     </Typography>
                   )}
-
-                  {/* {devices.length > 0 ? (
-                    [...devices]
-                      .sort((a, b) => a.device_name.localeCompare(b.device_name))
-                      .map((device) => (
-                        <Box id='InnerDeviceBoxContainer'
-                          key={device.deviceid}
-                          sx={{
-                            ...styles.deviceItem,
-                            ...(selectedDevices.includes(device.deviceid) ? styles.selectedDeviceItem : {})
-                          }}
-                        >
-                          <FormControlLabel
-                            control={
-                              <Checkbox 
-                                checked={selectedDevices.includes(device.deviceid)}
-                                onChange={() => toggleDeviceSelection(device.deviceid)}
-                              />
-                            }
-                            label={
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                                <Typography variant="h1" sx={{ fontSize: '1.8rem' }}>{device.device_name}</Typography>
-                                {deviceStatus[device.deviceid] && (
-                                  <Chip 
-                                    size="medium" 
-                                    label={deviceStatus[device.deviceid]} 
-                                    color={getStatusColor(deviceStatus[device.deviceid])}
-                                    sx={{ ml: 3, borderRadius: '8px', fontWeight: 'bold', fontSize: '1.2rem', padding: '10px', height: '40px' }}
-                                  />
-                                )}
-                              </Box>
-                            }
-                            sx={{ width: '100%' }}
-                          />
-                        </Box>
-                      ))
-                  ) : (
-                    <Typography sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>
-                      No devices available
-                    </Typography>
-                  )} */}
                 </FormGroup>
               )}
             </Box>

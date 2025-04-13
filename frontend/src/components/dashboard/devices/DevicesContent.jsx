@@ -800,10 +800,10 @@ const DevicesContent = () => {
       showLastButton: true, 
       sx: {
         '& .MuiPaginationItem-root': {
-          fontSize: '2.4rem', // Larger font size for pagination items
+          fontSize: '2.4rem', 
         },
         '& .MuiSvgIcon-root': {
-          fontSize: '4rem', // Larger icons for first/last/next/prev buttons
+          fontSize: '4rem', 
         }
       },
     },
@@ -977,7 +977,6 @@ const DevicesContent = () => {
                         <ListItemSecondaryAction sx={{ width: '100px' }}>
                           <Switch 
                             edge="end"
-                            // size="medium"
                             checked={isAssigned}
                             onChange={(e) => handleRoleAssignment(
                               selectedDeviceForRoles.device_id, 

@@ -66,19 +66,15 @@ const styles = {
     alignItems: 'center',
     fontWeight: '900', 
     '& .MuiButton-startIcon': {
-      marginRight: 1,  // Adjust spacing between icon and text
+      marginRight: 1, 
     },
     '& .MuiSvgIcon-root': {
-      fontSize: '3rem',  // Make the icon larger
+      fontSize: '3rem',  
     }
   },
 };
 
 const NAVIGATION = [
-  // {
-  //   kind: 'header',
-  //   title: 'Main items',
-  // },
   {
     segment: '/', // Use root path for Dashboard
     title: 'DASHBOARD',
@@ -175,27 +171,6 @@ const SidebarComponent = ({ drawerWidth, mobileOpen, handleDrawerToggle, onSelec
         </List>
       </Box>
       
-      {/* Logout button section - fixed at bottom */}
-      {/* <Box sx={{ 
-        mt: 'auto', // Push to bottom
-        p: 2,
-        borderTop: 1, 
-        borderColor: 'divider'
-      }}>
-        <Button 
-          variant="contained" 
-          color="error" 
-          fullWidth 
-
-          startIcon={<LogoutIcon />}
-          onClick={handleLogout}
-          sx={{ 
-            ...styles.logoutText,
-          }}
-        >
-          LOG OUT
-        </Button>
-      </Box> */}
       {/* Logout section - fixed at bottom, styled like NavItems */}
       <Box sx={{ mt: 'auto' }}>
         <Divider />
@@ -235,7 +210,7 @@ const SidebarComponent = ({ drawerWidth, mobileOpen, handleDrawerToggle, onSelec
       <Drawer
         variant="permanent"
         sx={{
-          display: { xs: 'none', sm: 'block' }, // Correct display for desktop
+          display: { xs: 'none', sm: 'block' },
           '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
         }}
         open
