@@ -2,11 +2,10 @@
 <a name="readme-top"></a>
 <div align="center">  
   <img src="Drawings/logo/SecurGate_logo.png" alt="Logo"> 
-  <p align="center" style="font-size: 48px; font-weight: bold;"><strong>SETU - Higher Diploma in Computer Science</strong></p> 
-  <p align="center" style="font-size: 64px; font-weight: bold;"><strong>FINAL PROJECT</strong></p> 
-  
+   
+  <img src="Drawings/logo/SecurGate_header.png" alt="Logo">  
 </div>
-
+<br>
  <p style="font-size: 20px;">
 <strong>Commercial Title :</strong> SecureGate
 </br>
