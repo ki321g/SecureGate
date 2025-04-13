@@ -54,8 +54,6 @@ const styles = {
 	},
 	countdownContainer: {
 		padding: '10px 24px',
-		// backgroundColor: '#e8f5e9',
-		// border: '2px solid #4caf50',		
         backgroundColor: '#fff0e6',
         border: '2px solid #ff4500',
 		borderRadius: '4px',
@@ -63,7 +61,6 @@ const styles = {
 	countdownText: {
 		fontSize: '1.8rem',
 		fontWeight: 'bold',
-		// color: '#4caf50',		
         color: '#ff4500'
 	},
 };

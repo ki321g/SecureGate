@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, Alert, Snackbar } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
-// You can set this as an environment variable like in the original code
-// or hardcode it for now
+
 const COUNT_DOWN = 10; // or use: import.meta.env.VITE_SUCCESS_COUNT_DOWN
 
 const styles = {
@@ -45,8 +44,6 @@ const styles = {
 	},
 	countdownContainer: {
 		padding: '10px 24px',
-		// backgroundColor: '#e8f5e9',
-		// border: '2px solid #4caf50',		
         backgroundColor: '#fff0e6',
         border: '2px solid #ff4500',
 		borderRadius: '4px',
@@ -54,7 +51,6 @@ const styles = {
 	countdownText: {
 		fontSize: '1.8rem',
 		fontWeight: 'bold',
-		// color: '#4caf50',		
         color: '#ff4500'
 	},
 };
@@ -89,21 +85,10 @@ const SuccessComponent = ({ setActiveComponent, setShowFaceDector }) => {
 				setCountdown(countdown - 1);
 			}, 1000);
 		} else if (countdown === 0) {
-			// Display RESET alert when countdown reaches zero
-			
-            
-            
             // Turn off face detector
             setShowFaceDector(false);
             // Navigate back to scan card
             setActiveComponent('scanCard');
-
-			// // Handle what happens when countdown reaches zero
-			// // For example, navigate to another component
-			// if (setActiveComponent) {
-			// 	setShowFaceDector && setShowFaceDector(false);
-			// 	setActiveComponent('scanCard');
-			// }
 		}
 
 		return () => {

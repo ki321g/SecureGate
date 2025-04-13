@@ -19,7 +19,6 @@ import {
   ListItemSecondaryAction,
   Switch
 } from '@mui/material';
-// import { MaterialReactTable } from 'material-react-table';
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
 
 

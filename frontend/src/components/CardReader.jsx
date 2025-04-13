@@ -41,13 +41,12 @@ const CardReader = ({ setEnableDetectFace }) => {
         if (isReading) {
             const interval = setInterval(() => {
                 readCard();
-            }, 100); // Poll every 5 seconds
+            }, 100); 
 
             return () => clearInterval(interval); // Cleanup on component unmount
         }
         const fetchUserData = async () => {
             if (cardUID != 'noCardUID') {
-                // if (cardData.status === 'success') {
                     try {
                         const { data, error } = await usersApi.getByCardId(cardData.card_uid);
                         
@@ -83,15 +82,6 @@ const CardReader = ({ setEnableDetectFace }) => {
 
 return (
     <>
-      {/* <br></br>
-      <button onClick={isReading ? stopReading : startReading}>
-        {isReading ? 'Stop Reading' : 'Start Reading'}
-      </button>
-    
-      <div>
-        <button onClick={() => resetCardUID('None')}>Set Card UID</button>
-      </div> */}
-
       {cardData ? (
           cardData.status === 'error' ? (
               <div>

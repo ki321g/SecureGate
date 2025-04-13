@@ -19,7 +19,6 @@ const styles = {
   securityIcon: {
     ml: -2,
     fontSize: 60,
-    // color: 'primary.main'
   },
 };
 
