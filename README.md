@@ -3,7 +3,7 @@
 <br />
 <div align="center">SETU - Higher Diploma in Computer Science
   <h1 align="center"></h1>
-  <img src="Documentation/Drawings/logo/SecurGate_logo.png" alt="Logo">  
+  <img src="Drawings/logo/SecurGate_logo.png" alt="Logo">  
 </div>
 
 <!-- ABOUT THE PROJECT -->
@@ -16,12 +16,13 @@ This project demonstrates the implementation of multi factor authentication with
 <!-- Devloped With -->
 ### SecureGate was developed using the following Technologies
 
-<img src="Documentation/Drawings/logo/SecurGate_banner.png.png">|
-
-
+<div align="center">
+<img src="Drawings/logo/SecurGate_banner.png">
+</div>
 <!-- SecureGate Showcase Website -->
 ## SecureGate Showcase Website
 Link: [https://securegate-kg.vercel.app/](https://securegate-kg.vercel.app/)
 
+<a href="https://youtu.be/kmqXVC0wVdA" target="_blank">https://securegate-kg.vercel.app/</a>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
