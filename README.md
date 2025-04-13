@@ -1,11 +1,11 @@
 
 <a name="readme-top"></a>
-<div align="center">  
-  <img src="Drawings/logo/SecurGate_logo.png" alt="Logo"> 
-   
-  <img src="Drawings/logo/SecurGate_header.png" alt="Logo">  
+<div align="center">
+  <img src="Drawings/logo/SecurGate_header.png" alt="Logo"> 
+  <br /><br />
+  <img src="Drawings/logo/SecurGate_logo.png" alt="Logo">
 </div>
-<br>
+<br />
  <p style="font-size: 20px;">
 <strong>Commercial Title :</strong> SecureGate
 </br>
