@@ -2,8 +2,8 @@
 <a name="readme-top"></a>
 <div align="center">  
   <img src="Drawings/logo/SecurGate_logo.png" alt="Logo"> 
-  <p align="center" style="font-size: 28px; font-weight: bold;"><strong>SETU - Higher Diploma in Computer Science</strong></p> 
-  <p align="center" style="font-size: 36px; font-weight: bold;"><strong>FINAL PROJECT</strong></p> 
+  <p align="center" style="font-size: 48px; font-weight: bold;"><strong>SETU - Higher Diploma in Computer Science</strong></p> 
+  <p align="center" style="font-size: 64px; font-weight: bold;"><strong>FINAL PROJECT</strong></p> 
   
 </div>
 
@@ -38,35 +38,50 @@ Below are a select few screenshots of the application..
 # Backend API
 <img src="Drawings\UI\API\API_DOCS.png">
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 # Frontend User Flows
 ### Administrator Flow
 <img src="Drawings\UI\UseCase\ADMIN.png">
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ### Cleaner Flow
 <img src="Drawings\UI\UseCase\CLEANER.png">
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ### User Flow
 <img src="Drawings\UI\UseCase\LAB_TECHNICIAN.png">
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 # Admin Dashboard
 
 ### Anylitics Dashboard
 <img src="Drawings\UI\backend\AdminDashboard.png">
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ### Users Dashboard
 <img src="Drawings\UI\backend\UsersDashboard.png">
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Add User Step # 1 Dashboard
 <img src="Drawings\UI\backend\AddUserPhotoStep1Dashboard.png">
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ### Add User Step # 2 Dashboard
 <img src="Drawings\UI\backend\AddUserPhotoStep2Dashboard.png">
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Failed Logins Dashboard
 <img src="Drawings\UI\backend\FailedLoginsDashboard.png">
 
-
-
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- CONTACT -->
 ## Contact
