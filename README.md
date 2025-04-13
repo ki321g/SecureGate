@@ -30,6 +30,14 @@ Link: <a href="https://securegate-kg.vercel.app/" target="_blank">https://secure
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+
+<!-- VIDEO -->
+## Video Walk Through
+<a href="https://www.youtube.com/watch?v=NhTK9tTKvMk" target="_blank">
+ <img src="Drawings/logo/SecurGate_YouTube.png" alt="Watch the video"/>
+</a>
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 # SecureGate Application Screenshots
 Below are a select few screenshots of the application.. 
 
